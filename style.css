@@ -1,0 +1,206 @@
+/* =========================================
+   CSS BAWAAN DARI KAMU (TIDAK DIUBAH)
+   ========================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: url("bg.png") center/cover no-repeat;
+    min-height: 100vh;
+    padding: 15px;
+    font-family: Georgia, serif;
+}
+
+.container {
+    max-width: 750px;
+    margin: auto;
+}
+
+.header {
+    background: #f8f8f8;
+    border: 3px solid #2d63d8;
+    border-radius: 24px;
+    padding: 18px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.welcome-card h3 { color: #2d63d8; font-size: 22px; margin-bottom: 4px; }
+.welcome-card p { color: #2d63d8; font-size: 18px; font-weight: 700; }
+#datetime { margin-top: 4px; font-size: 12px; opacity: .7; }
+
+.action-group { display: flex; gap: 10px; }
+.action-group button {
+    flex: 1; min-height: 60px; border: none; border-radius: 16px;
+    background: #fff; border: 1px solid #2d63d8; font-weight: 700;
+    cursor: pointer; transition: .15s;
+}
+.action-group button:active { transform: scale(.95); }
+
+.saldo-card {
+    position: relative;
+    overflow: hidden;
+    background: #f8f8f8;
+    border: 3px solid #2d63d8;
+    border-radius: 35px;
+    padding: 24px;
+    margin-bottom: 18px;
+}
+
+.saldo-bg {
+    position: absolute;
+    right: -20px;
+    top: 10px;
+    width: 170px;
+    opacity: .08;
+    pointer-events: none;
+}
+
+.saldo-card h2, .saldo-card h1, .summary { position: relative; z-index: 2; }
+.saldo-card h2 { font-size: 28px; margin-bottom: 8px; color: #2d63d8; }
+#saldoTotal, .saldo-card h1 { font-size: 42px; font-weight: 900; margin-bottom: 16px; color: #000; }
+.summary p { font-size: 15px; font-weight: 700; margin-bottom: 7px; color: #2d63d8; }
+
+.piutang-line { color: #0e9870; }
+.utang-line { color: #d43838; }
+#totalMasuk { color: #13a34a; }
+#totalKeluar { color: #d43838; }
+
+.menu-card {
+    background: #f8f8f8;
+    border: 3px solid #2d63d8;
+    border-radius: 35px;
+    padding: 20px;
+    margin-bottom: 18px;
+}
+
+.menu-title { text-align: center; font-size: 28px; font-weight: 900; margin-bottom: 16px; color: #2d63d8; }
+
+.menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.menu-grid a {
+    text-decoration: none; color: #000; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    font-size: 13px; font-weight: 700; transition: .15s;
+}
+.menu-grid a:active { transform: scale(.92); }
+.menu-grid img { width: 72px; height: 72px; object-fit: contain; margin-bottom: 6px; }
+
+.notes-section { background: #f8f8f8; border: 3px solid #2d63d8; border-radius: 35px; padding: 20px; }
+.notes-section h2 { text-align: center; font-size: 26px; margin-bottom: 15px; color: #2d63d8;}
+#notesContainer { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; }
+.note-card { min-width: 220px; background: #fff; border-radius: 16px; padding: 12px; scroll-snap-align: start; }
+
+@media(max-width: 600px) {
+    #saldoTotal, .saldo-card h1 { font-size: 34px; }
+    .saldo-bg { width: 140px; }
+    .menu-grid img { width: 60px; height: 60px; }
+    .menu-grid a { font-size: 12px; }
+}
+
+/* =========================================
+   CSS TAMBAHAN (Mengikuti tema warna di atas)
+   ========================================= */
+
+.btn-savedata {
+    width: 100%;
+    background: #2d63d8;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    font-family: Georgia, serif;
+    cursor: pointer;
+    margin-bottom: 18px;
+    transition: .15s;
+}
+.btn-savedata:active { transform: scale(.95); }
+
+.riwayat-container {
+    position: relative;
+    padding-bottom: 110px; /* Jarak untuk input bawah */
+    min-height: 400px;
+}
+
+.riwayat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.riwayat-item {
+    background: #fff;
+    border: 2px solid #2d63d8;
+    border-radius: 16px;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    color: #000;
+}
+
+.bottom-action {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #f8f8f8;
+    border-top: 3px solid #2d63d8;
+    border-bottom-left-radius: 32px;
+    border-bottom-right-radius: 32px;
+    padding: 20px;
+    text-align: center;
+}
+
+.bottom-action h4 {
+    margin-bottom: 12px;
+    font-size: 16px;
+    color: #2d63d8;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #2d63d8;
+    border-radius: 12px;
+    font-family: Georgia, serif;
+    font-weight: 700;
+    text-align: right;
+    outline: none;
+}
+
+.input-group button {
+    padding: 12px 20px;
+    background: #2d63d8;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-family: Georgia, serif;
+    cursor: pointer;
+    transition: .15s;
+}
+.input-group button:active { transform: scale(.95); }
+
+.nav-wrapper { position: relative; display: inline-block; }
+.nav-icon { width: 50px; cursor: pointer; transition: transform 0.5s; }
+.nav-icon.active { transform: rotate(180deg); }
+
+.nav-popup {
+    display: none; position: absolute; top: 60px; right: 0;
+    background: white; border: 1px solid #ccc; padding: 10px; border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 100;
+}
+.nav-popup a { display: flex; align-items: center; gap: 10px; padding: 5px; text-decoration: none; color: black; }
+.nav-popup img { width: 25px; }

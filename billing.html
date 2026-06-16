@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Arc - Tagihan Utang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080a;
+    --card-light-1: #dadcdf;
+    --card-light-2: #bcbfc3;
+    --hist-card-1: #c9cbce;
+    --hist-card-2: #b3b6ba;
+    --panel-bg: #0a0a0e;
+    --blue: #2d63d8;
+    --blue-soft: #5b8bf7;
+    --ink: #15161a;
+    --green: #0e9870;
+    --red: #d43838;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: url("bg.png") center/cover no-repeat fixed;
+    background-color: var(--bg);
+    font-family: 'Inter', sans-serif; color: #fff;
+    min-height: 100vh; display: flex; justify-content: center;
+    padding: 15px 15px 140px;
+  }
+  .container { width: 100%; max-width: 750px; position: relative; }
+  .text-stroke { -webkit-text-stroke: 0.5px #000; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+
+  /* HEADER */
+  .header {
+    background: var(--panel-bg); border: 2px solid var(--blue);
+    border-radius: 24px; padding: 18px; margin-bottom: 18px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .month-label { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; }
+  .update-badge { font-size: 11px; opacity: 0.6; }
+
+  /* TOTAL CARD */
+  .card-total {
+    position: relative; overflow: hidden;
+    background: linear-gradient(150deg, var(--card-light-1), var(--card-light-2));
+    border-radius: 32px; padding: 26px; margin-bottom: 18px;
+    box-shadow: 0 14px 35px rgba(0,0,0,0.4); color: var(--ink);
+  }
+  .deco-wrap {
+    position: absolute; top: 50%; right: -40px; transform: translateY(-50%);
+    width: 130px; height: 130px; pointer-events: none;
+    mask-image: linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%);
+    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%);
+  }
+  .deco-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .data-row { margin-bottom: 8px; position: relative; z-index: 2; }
+  .label-sub { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(0,0,0,0.55); margin-bottom: 2px; }
+  .total-amount { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 32px; color: var(--red); }
+
+  /* PANEL */
+  .section { margin-bottom: 18px; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 12px; color: var(--blue-soft); text-align: center; }
+  .panel { background: var(--panel-bg); border: 2px solid var(--blue); border-radius: 28px; padding: 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .history-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .hist-card {
+    background: linear-gradient(150deg, var(--hist-card-1), var(--hist-card-2));
+    border-radius: 18px; padding: 16px 18px;
+    display: flex; justify-content: space-between; align-items: center;
+    color: var(--ink); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: slideIn .3s ease; position: relative;
+  }
+  @keyframes slideIn { from{opacity:0;transform:translateY(-8px);} to{opacity:1;transform:translateY(0);} }
+  .hist-info { flex: 1; }
+  .hist-name { font-family: 'Playfair Display', serif; font-weight: 800; font-size: 15px; }
+  .hist-date { font-size: 11px; opacity: 0.6; margin-top: 2px; }
+  .hist-amount { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 18px; color: var(--red); text-align: right; }
+  .del-btn {
+    position: absolute; top: -6px; right: -6px;
+    background: var(--red); border: none; border-radius: 50%;
+    color: #fff; font-size: 10px; font-weight: bold;
+    width: 18px; height: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .empty-state { text-align: center; padding: 30px; color: var(--blue-soft); font-weight: 700; font-size: 13px; }
+  .empty-state strong { display: block; font-family: 'Playfair Display', serif; font-size: 16px; color: #fff; margin-bottom: 6px; }
+
+  /* BOTTOM SHEET */
+  .bottom-sheet { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; z-index: 1000; }
+  .sheet-inner { width: 100%; max-width: 550px; background: var(--panel-bg); border: 2px solid var(--blue); border-radius: 28px 28px 0 0; overflow: hidden; }
+  .sheet-toggle {
+    width: 100%; border: none;
+    background: linear-gradient(150deg, var(--card-light-1), var(--card-light-2));
+    font-family: 'Playfair Display', serif; font-weight: 800; font-size: 15px;
+    padding: 16px; cursor: pointer; color: var(--ink); text-align: center;
+  }
+  .sheet-form { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+  .sheet-form.open { max-height: 320px; }
+  .sheet-form-inner { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .field {
+    width: 100%; padding: 14px; border-radius: 14px; border: 1px solid #222;
+    background: #111217; color: #fff; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; outline: none;
+  }
+  .field::placeholder { color: #555; }
+  .field:focus { border-color: var(--blue); }
+  .submit-btn {
+    padding: 14px; border: none; border-radius: 14px;
+    background: var(--blue); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+  .submit-btn:hover { background: var(--blue-soft); }
+
+  /* NAV ORB */
+  .nav-container { position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; align-items: center; touch-action: none; }
+  .nav-orb { width: 56px; height: 56px; cursor: grab; background: rgba(16,18,24,0.9); border: 2px solid var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.2s ease; }
+  .nav-orb:active { cursor: grabbing; transform: scale(0.95); }
+  .nav-orb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .nav-orb.spin { transform: rotate(360deg); transition: transform 0.6s cubic-bezier(.4,0,.2,1); }
+  .nav-menu { position: absolute; left: 70px; display: flex; flex-direction: column; gap: 9px; pointer-events: none; }
+  .nav-menu a { background: #101218; border: 1px solid var(--blue); color: #eef2ff; font-weight: 600; font-size: 13px; text-decoration: none; padding: 10px 18px; border-radius: 999px; white-space: nowrap; box-shadow: 0 6px 14px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateX(-20px); transition: opacity 0.3s cubic-bezier(0.34,1.56,0.64,1), transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  .nav-menu a:hover { background: #1a1d27; color: var(--blue-soft); }
+  .nav-menu.open { pointer-events: auto; }
+  .nav-menu.open a { opacity: 1; transform: translateX(0); }
+  .nav-menu.open a:nth-child(1){transition-delay:.05s;} .nav-menu.open a:nth-child(2){transition-delay:.12s;} .nav-menu.open a:nth-child(3){transition-delay:.19s;} .nav-menu.open a:nth-child(4){transition-delay:.26s;}
+  .nav-menu:not(.open) a { transition-delay: 0s !important; }
+</style>
+</head>
+<body>
+
+<div class="nav-container" id="navContainer">
+  <div class="nav-orb" id="navOrb"><img src="icon.png" alt="Logo"></div>
+  <div class="nav-menu" id="navMenu">
+    <a href="index.html">  Dashboard</a>
+    <a href="history.html">  Riwayat Duit</a>
+    <a href="utang.html">  Utang</a>
+    <a href="notes.html">  Notes</a>
+    <a href="grafik.html">  Grafik</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="header">
+    <div>
+      <div class="month-label">Tagihan Utang</div>
+    </div>
+    <span class="update-badge" id="liveClock">—</span>
+  </div>
+
+  <div class="card-total">
+    <div class="deco-wrap"><img src="icon.png" alt=""></div>
+    <div class="data-row">
+      <p class="label-sub">Total Tagihan Aktif</p>
+      <h1 class="total-amount text-stroke" id="totalBillingDisplay">Rp 0</h1>
+    </div>
+    <div class="data-row" style="margin-top:12px;">
+      <p style="font-size:12px;font-weight:700;color:rgba(0,0,0,0.5);">Jumlah tagihan: <span id="countBilling" style="color:var(--ink);">0 item</span></p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Daftar Tagihan</div>
+    <div class="panel">
+      <div class="history-list" id="billingList">
+        <div class="empty-state"><strong>Belum ada tagihan</strong>Tambahkan tagihan lewat tombol di bawah.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-sheet">
+  <div class="sheet-inner">
+    <button class="sheet-toggle" id="sheetToggle">+ Tambah Tagihan Utang</button>
+    <div class="sheet-form" id="sheetForm">
+      <div class="sheet-form-inner">
+        <input class="field" id="inputName" placeholder="Nama / Keterangan tagihan">
+        <input class="field" id="inputAmount" type="number" placeholder="Jumlah tagihan (Rp)" min="0">
+        <input class="field" id="inputDue" type="date">
+        <button class="submit-btn" onclick="addBilling()">Tambahkan Tagihan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// KEY: 'billing_entries' — dipakai dashboard untuk sync total tagihan
+let entries = JSON.parse(localStorage.getItem('billing_entries') || '[]');
+
+function formatRupiah(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+function escHtml(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+
+function formatDateTime(d) {
+  const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  return `${days[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} — ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+setInterval(() => { document.getElementById('liveClock').textContent = 'UPD · ' + formatDateTime(new Date()); }, 1000);
+
+function render() {
+  const list  = document.getElementById('billingList');
+  const total = entries.reduce((s, e) => s + (e.amount || 0), 0);
+  document.getElementById('totalBillingDisplay').textContent = formatRupiah(total);
+  document.getElementById('countBilling').textContent = entries.length + ' item';
+
+  if (entries.length === 0) {
+    list.innerHTML = '<div class="empty-state"><strong>Belum ada tagihan</strong>Tambahkan tagihan lewat tombol di bawah.</div>';
+    return;
+  }
+  list.innerHTML = entries.map((e, i) => `
+    <div class="hist-card">
+      <button class="del-btn" onclick="deleteEntry(${i})">✕</button>
+      <div class="hist-info">
+        <div class="hist-name">${escHtml(e.name)}</div>
+        <div class="hist-date">${escHtml(e.datetimeStr)}${e.due ? ' · Jatuh tempo: ' + e.due : ''}</div>
+      </div>
+      <div class="hist-amount text-stroke">${formatRupiah(e.amount)}</div>
+    </div>`).join('');
+}
+
+function save() { localStorage.setItem('billing_entries', JSON.stringify(entries)); }
+
+function addBilling() {
+  const name   = document.getElementById('inputName').value.trim();
+  const amount = parseFloat(document.getElementById('inputAmount').value) || 0;
+  const due    = document.getElementById('inputDue').value;
+  if (!name)           { alert('Masukkan nama tagihan coo!'); return; }
+  if (!amount || amount <= 0) { alert('Masukkan jumlah tagihan!'); return; }
+
+  entries.unshift({ name, amount, due, datetimeStr: formatDateTime(new Date()) });
+  save(); render();
+  document.getElementById('inputName').value   = '';
+  document.getElementById('inputAmount').value = '';
+  document.getElementById('inputDue').value    = '';
+  document.getElementById('sheetForm').classList.remove('open');
+}
+
+function deleteEntry(i) {
+  if (!confirm('Hapus tagihan ini?')) return;
+  entries.splice(i, 1);
+  save(); render();
+}
+
+// Sheet toggle
+document.getElementById('sheetToggle').addEventListener('click', () => {
+  document.getElementById('sheetForm').classList.toggle('open');
+});
+
+// NAV ORB draggable
+const navC = document.getElementById('navContainer');
+const navO = document.getElementById('navOrb');
+const navM = document.getElementById('navMenu');
+let isDrag=false,sX,sY,iX,iY,moved=false;
+navO.addEventListener('pointerdown', e=>{isDrag=true;moved=false;sX=e.clientX;sY=e.clientY;const r=navC.getBoundingClientRect();iX=r.left;iY=r.top;navC.style.transform='none';navC.style.top=iY+'px';navC.style.left=iX+'px';navO.setPointerCapture(e.pointerId);});
+navO.addEventListener('pointermove', e=>{if(!isDrag)return;const dx=e.clientX-sX,dy=e.clientY-sY;if(Math.abs(dx)>5||Math.abs(dy)>5)moved=true;navC.style.left=Math.max(0,Math.min(window.innerWidth-60,iX+dx))+'px';navC.style.top=Math.max(0,Math.min(window.innerHeight-60,iY+dy))+'px';});
+navO.addEventListener('pointerup', e=>{if(!isDrag)return;isDrag=false;navO.releasePointerCapture(e.pointerId);if(!moved){navO.classList.add('spin');setTimeout(()=>navO.classList.remove('spin'),600);navM.classList.toggle('open');}});
+document.addEventListener('click', e=>{if(!navC.contains(e.target))navM.classList.remove('open');});
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arc Cashflow - Dashboard & Tren</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">  
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  /* ══════════════════════════
+     THEMING & VARIABLES (DISAMAKAN DENGAN ARC CASHFLOW)
+     ══════════════════════════ */
+  :root {
+    --bg: #08080a;
+    --card-light-1: #dadcdf;
+    --card-light-2: #bcbfc3;
+    --panel-bg: #0a0a0e;
+    --blue: #2d63d8;
+    --blue-soft: #5b8bf7;
+    --ink: #15161a;
+    --green: #0e9870;
+    --red: #d43838;
+    --yellow: #f59e0b;
+    --muted: #4a4a6a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: url("bg.png") center/cover no-repeat fixed;
+    background-color: var(--bg);
+    min-height: 100vh;
+    padding: 15px 15px 100px;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 750px;
+    position: relative;
+  }
+
+  .text-stroke {
+    -webkit-text-stroke: 0.5px #000000;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--panel-bg);
+    border: 2px solid var(--blue);
+    border-radius: 24px;
+    padding: 18px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .app-title { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--blue-soft); }
+  .update-badge { font-size: 11px; opacity: 0.6; }
+  .month-label { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-top: 4px; }
+
+  /* ── CARD RINGKASAN SALDO (STYLING ABU-ABU MERDEKA) ── */
+  .selisih-card {
+    background: linear-gradient(150deg, var(--card-light-1), var(--card-light-2));
+    border-radius: 32px;
+    padding: 26px;
+    margin-bottom: 18px;
+    box-shadow: 0 14px 35px rgba(0,0,0,0.4);
+    color: var(--ink);
+  }
+  .selisih-label { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; opacity: 0.6; margin-bottom: 14px; }
+  .row-inout { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
+  .io-label { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .io-label.green { color: var(--green); }
+  .io-label.red { color: var(--red); }
+  .io-value { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 900; }
+  .io-value.green { color: var(--green); }
+  .io-value.red { color: var(--red); }
+  
+  .net-value { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; margin-top: 4px; }
+  .net-value.positive { color: var(--green); }
+  .net-value.negative { color: var(--red); }
+  .net-value.zero { color: var(--ink); opacity: 0.7; }
+
+  .selisih-divider { height: 1px; background: rgba(0,0,0,0.15); margin: 14px 0; }
+  
+  .rasio-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 11px; font-weight: 700; }
+  .rasio-label { width: 60px; opacity: 0.7; }
+  .rasio-bar-wrap { flex: 1; height: 8px; background: rgba(0,0,0,0.1); border-radius: 99px; overflow: hidden; }
+  .rasio-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+  .rasio-pct { width: 36px; text-align: right; }
+
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid; margin-top: 8px; }
+  .status-badge.safe { background: rgba(14,152,112,0.15); border-color: var(--green); color: var(--green); }
+  .status-badge.warn { background: rgba(245,158,11,0.15); border-color: var(--yellow); color: var(--yellow); }
+  .status-badge.danger { background: rgba(212,56,56,0.15); border-color: var(--red); color: var(--red); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* ── PANEL STANDAR (MENU / INPUT / GRAFIK / ANALISIS) ── */
+  .section { margin-bottom: 18px; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 12px; color: var(--blue-soft); text-align: center; }
+  
+  .panel-card { background: var(--panel-bg); border: 2px solid var(--blue); border-radius: 28px; padding: 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+
+  /* ── STYLING KOMPONEN ANALISIS OTOMATIS ── */
+  .analisis-card { border-left: 4px solid var(--blue); transition: border-left-color 0.4s; }
+  .analisis-card.safe { border-left-color: var(--green); }
+  .analisis-card.warn { border-left-color: var(--yellow); }
+  .analisis-card.danger { border-left-color: var(--red); }
+  .analisis-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--blue-soft); margin-bottom: 10px; }
+  .analisis-desc { font-size: 13px; line-height: 1.6; color: #ccc; }
+  .analisis-desc strong { color: #fff; }
+  .saran-list { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .saran-item { display: flex; align-items: flex-start; gap: 10px; background: #111217; border-radius: 12px; padding: 12px; border: 1px solid #222; font-size: 12px; color: #ccc; line-height: 1.5; }
+  .saran-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* ── STYLING CHART AREA ── */
+  .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .chart-legend { display: flex; gap: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #aaa; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+  canvas { max-height: 220px; }
+
+  /* ── STYLING HISTORY AREA ── */
+  .history-header { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; padding-bottom: 10px; border-bottom: 1px solid #222; font-size: 11px; font-weight: 700; color: var(--blue-soft); }
+  .history-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; font-size: 13px; font-weight: 600; }
+  .history-row:last-child { border-bottom: none; }
+  .h-month { color: #aaa; }
+  .h-val { font-weight: 700; }
+  .h-val.green { color: var(--green); }
+  .h-val.red { color: var(--red); }
+  .h-ratio { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 8px; text-align: center; width: fit-content; }
+  .h-ratio.safe { background: rgba(14,152,112,0.15); color: var(--green); }
+  .h-ratio.warn { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .h-ratio.danger { background: rgba(212,56,56,0.15); color: var(--red); }
+  .empty-state { padding: 20px; text-align: center; font-size: 13px; color: var(--blue-soft); font-weight: 700; }
+
+  /* ══════════════════════════
+     FLOATING NAV ORB SYSTEM WITH STAGGER ANIMATION
+     ══════════════════════════ */
+  .nav-container { position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 200; display: flex; align-items: center; touch-action: none; }
+  
+  .nav-orb { 
+    width: 56px; height: 56px; cursor: grab; background: rgba(16, 18, 24, 0.9); 
+    border: 2px solid var(--blue); border-radius: 50%; display: flex; align-items: center; 
+    justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.2s ease; 
+  }
+  .nav-orb:active { cursor: grabbing; transform: scale(0.95); }
+  .nav-orb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .nav-orb.spin { transform: rotate(360deg); transition: transform 0.6s cubic-bezier(.4,0,.2,1); }
+
+  .nav-menu { position: absolute; left: 70px; display: flex; flex-direction: column; gap: 9px; pointer-events: none; }
+  
+  .nav-menu a { 
+    background: #101218; border: 1px solid var(--blue); color: #eef2ff; font-weight: 600; font-size: 13px; 
+    text-decoration: none; padding: 10px 18px; border-radius: 999px; white-space: nowrap; 
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px;
+    opacity: 0; transform: translateX(-20px); 
+    transition: opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+  }
+  .nav-menu a:hover { background: #1a1d27; color: var(--blue-soft); }
+
+  .nav-menu.open { pointer-events: auto; }
+  .nav-menu.open a { opacity: 1; transform: translateX(0); }
+
+  /* STAGGERED DELAY LOGIC */
+  .nav-menu.open a:nth-child(1) { transition-delay: 0.05s; }
+  .nav-menu.open a:nth-child(2) { transition-delay: 0.12s; }
+  .nav-menu.open a:nth-child(3) { transition-delay: 0.19s; }
+  .nav-menu.open a:nth-child(4) { transition-delay: 0.26s; }
+  .nav-menu.open a:nth-child(5) { transition-delay: 0.33s; }
+  .nav-menu:not(.open) a { transition-delay: 0s !important; }
+</style>
+</head>
+<body>
+
+<!-- FLOATING NAVBAR ENGINE -->
+<div class="nav-container" id="navContainer">
+  <div class="nav-orb" id="navOrb"><img src="icon.png" alt="Logo"></div>
+  <div class="nav-menu" id="navMenu">
+    <a href="index.html">  Dashboard</a>
+    <a href="history.html">  Riwayat Duit</a>
+    <a href="billing.html">  Tagihan Utang</a>
+    <a href="utang.html">  Utang</a>
+    <a href="notes.html">  Notes</a>
+  </div>
+</div>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div>
+            <span class="app-title">CASHFLOW ANALYTICS</span>
+            <div class="month-label" id="currentMonthLabel">Memuat...</div>
+        </div>
+        <span class="update-badge" id="updateDate">—</span>
+    </div>
+
+    <!-- SELISIH BULAN INI CARD -->
+    <div class="selisih-card">
+        <div class="selisih-label">Rasio &amp; Selisih Bulan Ini</div>
+        <div class="row-inout">
+            <div>
+                <div class="io-label green">Masuk</div>
+                <div class="io-value green text-stroke" id="totalMasuk">Rp 0</div>
+            </div>
+            <div style="text-align: right;">
+                <div class="io-label red">Keluar</div>
+                <div class="io-value red text-stroke" id="totalKeluar">Rp 0</div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom:10px;">
+            <div style="font-size:11px; font-weight: 700; opacity: 0.6; margin-bottom:2px;">NET BALANCE</div>
+            <div class="net-value text-stroke" id="netValue">Rp 0</div>
+        </div>
+        
+        <div class="selisih-divider"></div>
+        
+        <div class="rasio-row">
+            <span class="rasio-label">MASUK</span>
+            <div class="rasio-bar-wrap">
+                <div class="rasio-bar-fill" id="barMasuk" style="width:50%;background:var(--green)"></div>
+            </div>
+            <span class="rasio-pct" id="pctMasuk">50%</span>
+        </div>
+        <div class="rasio-row">
+            <span class="rasio-label">KELUAR</span>
+            <div class="rasio-bar-wrap">
+                <div class="rasio-bar-fill" id="barKeluar" style="width:50%;background:var(--red)"></div>
+            </div>
+            <span class="rasio-pct" id="pctKeluar">50%</span>
+        </div>
+        
+        <div>
+            <span class="status-badge safe" id="statusBadge">
+                <span class="dot"></span>
+                <span id="statusText">Seimbang</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- ANALISIS OTOMATIS PANEL -->
+    <div class="section">
+        <div class="section-title">Analisis Otomatis</div>
+        <div class="panel-card analisis-card safe" id="analisisCard">
+            <div class="analisis-title">DESKRIPSI KONDISI KEUANGAN</div>
+            <div class="analisis-desc" id="analisisDesc">Belum ada riwayat transaksi terdeteksi.</div>
+            <div class="saran-list" id="saranList"></div>
+        </div>
+    </div>
+
+    <!-- GRAFIK TREN PANEL -->
+    <div class="section">
+        <div class="section-title">Grafik Perkembangan</div>
+        <div class="panel-card">
+            <div class="chart-header">
+                <div style="font-size:13px; font-weight:700;">Tren Aliran Dana</div>
+                <div class="chart-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Masuk</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Keluar</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Net</div>
+                </div>
+            </div>
+            <canvas id="myChart"></canvas>
+            <div style="margin-top:14px; font-size:12px; color:#aaa; line-height:1.6;" id="chartDesc">
+                Mengompilasi data transaksi harian...
+            </div>
+        </div>
+    </div>
+
+    <!-- RIWAYAT REKAP BULANAN -->
+    <div class="section">
+        <div class="section-title">Rekap Bulanan</div>
+        <div class="panel-card" style="padding: 18px;">
+            <div class="history-header">
+                <span>BULAN</span>
+                <span>MASUK</span>
+                <span>KELUAR</span>
+                <span style="text-align: right; padding-right: 8px;">RASIO</span>
+            </div>
+            <div id="historyList">
+                <div class="empty-state">Belum ada rekam data.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- =========================================
+     CORE INTEGRATION ENGINE
+     ========================================= -->
+<script>
+let chart = null;
+const BULAN_NAMES = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+const BULAN_FULL = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+let rawTransactions = [];
+try {
+    rawTransactions = JSON.parse(localStorage.getItem("savedDataRiwayat")) || [];
+} catch(e) {
+    rawTransactions = [];
+}
+
+function compileDataFromHistory() {
+    let monthlyGroup = {};
+    rawTransactions.forEach(item => {
+        if (!item.tanggal || !item.nominal) return;
+        let parts = item.tanggal.split(',')[0].split('/');
+        let d = new Date();
+        let bulan = d.getMonth() + 1;
+        let tahun = d.getFullYear();
+
+        if (parts.length === 3) {
+            let p0 = parseInt(parts[0].trim());
+            let p1 = parseInt(parts[1].trim());
+            let p2 = parseInt(parts[2].trim());
+            if (p1 <= 12) { bulan = p1; tahun = p2; } 
+            else if (p0 <= 12) { bulan = p0; tahun = p2; }
+        } else {
+            let parsedDate = new Date(item.tanggal);
+            if (!isNaN(parsedDate.getTime())) {
+                bulan = parsedDate.getMonth() + 1;
+                tahun = parsedDate.getFullYear();
+            }
+        }
+
+        let key = `${tahun}-${String(bulan).padStart(2, '0')}`;
+        if (!monthlyGroup[key]) {
+            monthlyGroup[key] = { key, bulan, tahun, masuk: 0, keluar: 0 };
+        }
+
+        let nilai = parseFloat(item.nominal) || 0;
+        let ketLower = item.tipe.toLowerCase();
+        if (ketLower.includes("keluar") || ketLower.includes("bayar") || ketLower.includes("beli") || ketLower.includes("utang")) {
+            monthlyGroup[key].keluar += nilai;
+        } else {
+            monthlyGroup[key].masuk += nilai;
+        }
+    });
+
+    let compiledList = Object.values(monthlyGroup);
+    compiledList.sort((a, b) => a.key.localeCompare(b.key));
+    return compiledList;
+}
+
+let data = compileDataFromHistory();
+
+function fmt(n) { return 'Rp ' + Math.abs(n).toLocaleString('id-ID'); }
+function fmtShort(n) {
+    if (n >= 1e9) return (n/1e9).toFixed(1)+'M';
+    if (n >= 1e6) return (n/1e6).toFixed(1)+'jt';
+    if (n >= 1e3) return (n/1e3).toFixed(0)+'rb';
+    return n.toString();
+}
+
+function init() {
+    const now = new Date();
+    document.getElementById('currentMonthLabel').textContent = BULAN_FULL[now.getMonth()+1] + ' ' + now.getFullYear();
+    document.getElementById('updateDate').textContent = 'UPD ' + now.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'});
+    render();
+}
+
+function getStatus(masuk, keluar) {
+    if (masuk === 0 && keluar === 0) return 'idle';
+    if (keluar === 0) return 'safe';
+    const ratio = keluar / masuk;
+    if (ratio <= 0.7) return 'safe';
+    if (ratio <= 0.9) return 'warn';
+    return 'danger';
+}
+
+function getAnalisis(masuk, keluar) {
+    const net = masuk - keluar;
+    const pctKeluar = masuk > 0 ? Math.round((keluar/masuk)*100) : 0;
+    const status = getStatus(masuk, keluar);
+    
+    if (masuk === 0 && keluar === 0) {
+        return { status: 'idle', desc: 'Belum ada riwayat transaksi terdeteksi bulan ini coo.', sarans: [] };
+    }
+    if (status === 'safe') {
+        return { status: 'safe', desc: `Kondisi keuangan bulan ini <strong>sehat</strong>. Pengeluaran hanya ${pctKeluar}% dari pemasukan, menyisakan surplus <strong>${fmt(net)}</strong>. Pertahankan pola ini dan alokasikan sisa ke tabungan atau investasi.`, sarans: [
+            { icon: '💰', text: 'Alokasikan minimal 20% surplus ke tabungan darurat.' },
+            { icon: '📈', text: 'Pertimbangkan investasi reksa dana atau saham untuk kelebihan dana.' },
+            { icon: '✅', text: 'Surplus konsisten? Coba tingkatkan target tabungan bulan depan.' },
+        ] };
+    }
+    if (status === 'warn') {
+        return { status: 'warn', desc: `Perhatian — pengeluaran mencapai <strong>${pctKeluar}% dari pemasukan</strong>, mendekati batas aman (90%). Net balance masih positif <strong>${fmt(net)}</strong>, tapi perlu waspada agar tidak melampaui pendapatan.`, sarans: [
+            { icon: '🔍', text: 'Audit pengeluaran: cari kategori yang bisa dipotong 10–15%.' },
+            { icon: '🚫', text: 'Tahan pengeluaran impulsif atau hiburan hingga rasio kembali di bawah 80%.' },
+            { icon: '📋', text: 'Buat anggaran bulanan dengan batas per kategori agar lebih terkontrol.' },
+            { icon: '⚠️', text: `Kurangi pengeluaran minimal ${fmt(keluar - masuk*0.8)} untuk mencapai rasio ideal 80%.` },
+        ] };
+    }
+    const overBy = keluar - masuk;
+    return { status: 'danger', desc: `🚨 Pengeluaran <strong>melebihi pemasukan</strong> — rasio ${pctKeluar}% (deficit <strong>${fmt(overBy)}</strong>). Kondisi ini tidak berkelanjutan dan bisa menguras tabungan atau menumpuk hutang jika dibiarkan.`, sarans: [
+        { icon: '✂️', text: `Potong pengeluaran minimal ${fmt(overBy)} agar break-even, atau ${fmt(keluar - masuk*0.8)} untuk rasio sehat 80%.` },
+        { icon: '🛑', text: 'Stop pengeluaran tidak wajib: langganan yang jarang dipakai, makan di luar, belanja online impulsif.' },
+        { icon: '💡', text: 'Cari sumber pemasukan tambahan: freelance, jual barang tidak terpakai, atau lembur.' },
+        { icon: '🏦', text: 'Jika deficit karena hutang berbunga, prioritaskan melunasinya sebelum hal lain.' },
+        { icon: '📊', text: 'Evaluasi ulang gaya hidup — coba metode 50/30/20 (kebutuhan/keinginan/tabungan).' },
+    ] };
+}
+
+function render() {
+    const now = new Date();
+    const thisKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const thisMonth = data.find(d => d.key === thisKey) || { masuk: 0, keluar: 0 };
+    
+    const masuk = thisMonth.masuk;
+    const keluar = thisMonth.keluar;
+    const net = masuk - keluar;
+    const total = masuk + keluar;
+    const pM = total > 0 ? Math.round((masuk/total)*100) : 50;
+    const pK = total > 0 ? Math.round((keluar/total)*100) : 50;
+
+    document.getElementById('totalMasuk').textContent = fmt(masuk);
+    document.getElementById('totalKeluar').textContent = fmt(keluar);
+    
+    const netEl = document.getElementById('netValue');
+    netEl.textContent = (net >= 0 ? '+' : '-') + fmt(Math.abs(net));
+    netEl.className = 'net-value ' + (net > 0 ? 'positive' : net < 0 ? 'negative' : 'zero');
+    
+    document.getElementById('barMasuk').style.width = pM + '%';
+    document.getElementById('barKeluar').style.width = pK + '%';
+    document.getElementById('pctMasuk').textContent = pM + '%';
+    document.getElementById('pctKeluar').textContent = pK + '%';
+
+    const status = getStatus(masuk, keluar);
+    const badge = document.getElementById('statusBadge');
+    const statusTexts = { safe: 'Sehat ✓', warn: 'Perhatian !', danger: 'Bahaya ✗', idle: 'Menunggu Data' };
+    badge.className = 'status-badge ' + (status === 'idle' ? 'safe' : status);
+    document.getElementById('statusText').textContent = statusTexts[status];
+
+    const analisis = getAnalisis(masuk, keluar);
+    const card = document.getElementById('analisisCard');
+    card.className = 'panel-card analisis-card ' + (analisis.status === 'idle' ? 'safe' : analisis.status);
+    document.getElementById('analisisDesc').innerHTML = analisis.desc;
+    
+    const saranEl = document.getElementById('saranList');
+    saranEl.innerHTML = analisis.sarans.map(s => `<div class="saran-item"><span class="saran-icon">${s.icon}</span><span>${s.text}</span></div>`).join('');
+
+    const ratio = masuk > 0 ? keluar/masuk : 1;
+    const kColor = ratio > 0.9 ? 'var(--red)' : ratio > 0.7 ? 'var(--yellow)' : 'var(--green)';
+    document.getElementById('barKeluar').style.background = kColor;
+
+    renderHistory();
+    renderChart();
+}
+
+function renderHistory() {
+    const el = document.getElementById('historyList');
+    if (data.length === 0) {
+        el.innerHTML = '<div class="empty-state">BELUM ADA DATA TRANSAKSI</div>';
+        return;
+    }
+    el.innerHTML = [...data].reverse().map(d => {
+        const status = getStatus(d.masuk, d.keluar);
+        const ratio = d.masuk > 0 ? Math.round((d.keluar/d.masuk)*100) : (d.keluar > 0 ? 999 : 0);
+        return `
+        <div class="history-row">
+            <span class="h-month">${BULAN_NAMES[d.bulan]} ${d.tahun}</span>
+            <span class="h-val green">${fmtShort(d.masuk)}</span>
+            <span class="h-val red">${fmtShort(d.keluar)}</span>
+            <div style="text-align: right; padding-right: 4px;">
+                <span class="h-ratio ${status}">${ratio}%</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderChart() {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const labels = data.map(d => BULAN_NAMES[d.bulan] + ' ' + String(d.tahun).slice(2));
+    const masukData = data.map(d => d.masuk);
+    const keluarData = data.map(d => d.keluar);
+    const netData = data.map(d => d.masuk - d.keluar);
+    const chartDesc = document.getElementById('chartDesc');
+
+    if (data.length === 0) {
+        chartDesc.textContent = 'Belum ada data dari aplikasi utama. Silakan isi riwayat transaksi terlebih dahulu.';
+        if (chart) { chart.destroy(); chart = null; }
+        return;
+    }
+
+    const avgNet = netData.reduce((a,b)=>a+b,0)/netData.length;
+    const trend = netData.length >= 2 ? (netData[netData.length-1] > netData[0] ? '📈 Tren net balance membaik.' : '📉 Tren net balance memburuk — perlu evaluasi.') : '';
+    const worst = data.reduce((a,b) => (b.keluar/b.masuk > a.keluar/a.masuk ? b : a), data[0]);
+    chartDesc.innerHTML = `${trend} Rata-rata net balance: <strong>${fmt(avgNet)}</strong>. Bulan dengan rasio tertinggi: <strong>${BULAN_NAMES[worst.bulan]} ${worst.tahun}</strong> (${Math.round(worst.keluar/worst.masuk*100)}% keluar).`;
+
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Masuk', data: masukData, backgroundColor: 'rgba(14,152,112,0.25)', borderColor: 'rgba(14,152,112,0.8)', borderWidth: 2, borderRadius: 6 },
+                { label: 'Keluar', data: keluarData, backgroundColor: 'rgba(212,56,56,0.25)', borderColor: 'rgba(212,56,56,0.8)', borderWidth: 2, borderRadius: 6 },
+                { label: 'Net', data: netData, type: 'line', borderColor: 'rgba(91,139,247,0.9)', backgroundColor: 'rgba(91,139,247,0.08)', borderWidth: 2, pointBackgroundColor: netData.map(n => n >= 0 ? '#0e9870' : '#d43838'), pointRadius: 4, fill: true, tension: 0.35, yAxisID: 'y' }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#0a0a0e', borderColor: '#2d63d8', borderWidth: 1, titleColor: '#5b8bf7', bodyColor: '#fff',
+                    titleFont: { family: 'Inter', size: 11, weight: 'bold' }, bodyFont: { family: 'Inter', size: 12 },
+                    callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` }
+                }
+            },
+            scales: {
+                x: { grid: { color: 'rgba(45,99,216,0.1)' }, ticks: { color: '#888', font: { family: 'Inter', size: 10 } } },
+                y: { grid: { color: 'rgba(45,99,216,0.1)' }, ticks: { color: '#888', font: { family: 'Inter', size: 10 }, callback: v => fmtShort(v) } }
+            }
+        }
+    });
+}
+
+/* ══════════════════════════
+   DRAGGABLE & SPIN STAGGER NAV LOGIC
+   ══════════════════════════ */
+const container = document.getElementById('navContainer');
+const orb = document.getElementById('navOrb');
+const menu = document.getElementById('navMenu');
+let isDragging = false, startX, startY, initialX, initialY, hasMoved = false;
+
+orb.addEventListener('pointerdown', (e) => {
+    isDragging = true; hasMoved = false;
+    startX = e.clientX; startY = e.clientY;
+    const rect = container.getBoundingClientRect();
+    initialX = rect.left; initialY = rect.top;
+    container.style.transform = 'none';
+    container.style.top = initialY + 'px'; container.style.left = initialX + 'px';
+    orb.setPointerCapture(e.pointerId);
+});
+
+orb.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX; const dy = e.clientY - startY;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true;
+    let newX = Math.max(0, Math.min(window.innerWidth - 60, initialX + dx));
+    let newY = Math.max(0, Math.min(window.innerHeight - 60, initialY + dy));
+    container.style.left = newX + 'px'; container.style.top = newY + 'px';
+    if (newX > window.innerWidth / 2) { menu.style.left = 'auto'; menu.style.right = '70px'; } 
+    else { menu.style.left = '70px'; menu.style.right = 'auto'; }
+});
+
+orb.addEventListener('pointerup', (e) => {
+    if (!isDragging) return; isDragging = false; orb.releasePointerCapture(e.pointerId);
+    if (!hasMoved) {
+        orb.classList.add('spin');
+        setTimeout(() => orb.classList.remove('spin'), 600);
+        menu.classList.toggle('open');
+    }
+});
+
+document.addEventListener('click', (e) => { if(!container.contains(e.target)) menu.classList.remove('open'); });
+
+window.onload = init;
+</script>
+</body>
+</html>

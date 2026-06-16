@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Profile · Arc Cashflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080a;
+    --panel-bg: #0a0a0e;
+    --blue: #2d63d8;
+    --blue-soft: #5b8bf7;
+    --ink: #15161a;
+    --green: #0e9870;
+    --red: #d43838;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: url("bg.png") center/cover no-repeat fixed;
+    background-color: var(--bg);
+    min-height: 100vh;
+    padding: 15px 15px 100px;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+  }
+
+  .container { width: 100%; max-width: 750px; position: relative; }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--panel-bg); border: 2px solid var(--blue); border-radius: 24px;
+    padding: 18px; margin-bottom: 18px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .back-btn {
+    width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--blue);
+    background: #16171c; color: #fff; display: flex; align-items: center; justify-content: center;
+    text-decoration: none; font-size: 18px; flex-shrink: 0;
+  }
+  .header h1 { font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 800; color: var(--blue-soft); }
+
+  /* ── PROFILE CARD ── */
+  .profile-card {
+    background: var(--panel-bg); border: 2px solid var(--blue); border-radius: 28px;
+    padding: 30px 22px; margin-bottom: 18px; text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  .avatar-wrap { position: relative; width: 120px; height: 120px; margin: 0 auto 18px; }
+  .avatar-wrap img {
+    width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
+    border: 3px solid var(--blue); background: #16171c; display: block;
+  }
+  .avatar-wrap img.empty { padding: 26px; object-fit: contain; opacity: .45; }
+  .avatar-edit-btn {
+    position: absolute; bottom: -2px; right: -2px; width: 36px; height: 36px;
+    border-radius: 50%; background: var(--blue); border: 2px solid var(--panel-bg);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; cursor: pointer;
+  }
+
+  .display-name { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 800; margin-bottom: 2px; }
+  .display-username { color: var(--blue-soft); font-size: 14px; font-weight: 600; margin-bottom: 22px; }
+
+  .field-list { display: flex; flex-direction: column; gap: 12px; text-align: left; margin-bottom: 4px; }
+  .field-row {
+    background: #111217; border: 1px solid #222; border-radius: 14px; padding: 12px 16px;
+  }
+  .field-row .field-label { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #666; margin-bottom: 4px; }
+  .field-row .field-value { font-size: 15px; font-weight: 600; color: #fff; }
+  .field-row .field-value.is-empty { color: #555; font-weight: 500; font-style: italic; }
+
+  .edit-toggle-btn {
+    margin-top: 18px; width: 100%; padding: 13px; border-radius: 12px; border: 1px solid var(--blue);
+    background: #16171c; color: var(--blue-soft); font-weight: 700; font-size: 14px; cursor: pointer; transition: .15s;
+  }
+  .edit-toggle-btn:active { transform: scale(.97); }
+
+  /* ── EDIT FORM ── */
+  .edit-form { display: none; text-align: left; margin-top: 18px; border-top: 1px solid #1c1d24; padding-top: 18px; }
+  .edit-form.open { display: block; }
+  .edit-form label { display: block; font-size: 12px; font-weight: 700; color: var(--blue-soft); margin-bottom: 6px; }
+  .edit-form .form-group { margin-bottom: 14px; }
+  .edit-form input {
+    width: 100%; padding: 12px 14px; border: 1px solid #333; background: #111217;
+    border-radius: 12px; font-family: 'Inter', sans-serif; font-weight: 600; color: #fff; outline: none; font-size: 14px;
+  }
+  .edit-form input:focus { border-color: var(--blue); }
+  .edit-form input[type="date"] { color-scheme: dark; }
+
+  .save-btn {
+    width: 100%; padding: 14px; background: var(--blue); color: #fff; border: none;
+    border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; transition: .15s; margin-top: 4px;
+  }
+  .save-btn:hover { background: var(--blue-soft); }
+  .save-btn:active { transform: scale(.98); }
+
+  .cancel-btn {
+    width: 100%; padding: 12px; background: transparent; color: #888; border: 1px solid #333;
+    border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 10px;
+  }
+
+  .empty-note {
+    background: #16171c; border: 1px dashed #333; border-radius: 14px; padding: 14px;
+    font-size: 12px; color: #666; text-align: center; margin-top: 14px; line-height: 1.6;
+  }
+
+  /* ── FLOATING NAV ORB (sama dgn index.html) ── */
+  .nav-container { position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; align-items: center; touch-action: none; }
+  .nav-orb {
+    width: 56px; height: 56px; cursor: grab; background: rgba(16,18,24,0.9);
+    border: 2px solid var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.2s ease;
+  }
+  .nav-orb:active { cursor: grabbing; transform: scale(0.95); }
+  .nav-orb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .nav-orb.spin { transform: rotate(360deg); transition: transform 0.6s cubic-bezier(.4,0,.2,1); }
+  .nav-menu { position: absolute; left: 70px; display: flex; flex-direction: column; gap: 9px; pointer-events: none; }
+  .nav-menu a {
+    background: #101218; border: 1px solid var(--blue); color: #eef2ff; font-weight: 600; font-size: 13px;
+    text-decoration: none; padding: 10px 18px; border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px;
+    opacity: 0; transform: translateX(-20px);
+    transition: opacity 0.3s cubic-bezier(0.34,1.56,0.64,1), transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .nav-menu a:hover { background: #1a1d27; color: var(--blue-soft); }
+  .nav-menu.open { pointer-events: auto; }
+  .nav-menu.open a { opacity: 1; transform: translateX(0); }
+  .nav-menu.open a:nth-child(1) { transition-delay: 0.05s; }
+  .nav-menu.open a:nth-child(2) { transition-delay: 0.12s; }
+  .nav-menu.open a:nth-child(3) { transition-delay: 0.19s; }
+  .nav-menu.open a:nth-child(4) { transition-delay: 0.26s; }
+  .nav-menu.open a:nth-child(5) { transition-delay: 0.33s; }
+  .nav-menu.open a:nth-child(6) { transition-delay: 0.40s; }
+  .nav-menu:not(.open) a { transition-delay: 0s !important; }
+</style>
+</head>
+<body>
+
+<div class="nav-container" id="navContainer">
+  <div class="nav-orb" id="navOrb">
+    <img src="icon.png" alt="Logo">
+  </div>
+  <div class="nav-menu" id="navMenu">
+    <a href="index.html">  Beranda</a>
+    <a href="history.html">  Riwayat Duit</a>
+    <a href="billing.html">  Tagihan Utang</a>
+    <a href="utang.html">  Utang</a>
+    <a href="notes.html">  Notes</a>
+    <a href="grafik.html">  Grafik</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="profile-card">
+
+    <div class="avatar-wrap">
+      <img id="avatarPreview" src="icon.png" class="empty" alt="Foto Profil">
+      <div class="avatar-edit-btn" onclick="document.getElementById('photoInput').click()">📷</div>
+      <input type="file" id="photoInput" hidden accept="image/*">
+    </div>
+
+    <div class="display-name" id="displayName">Belum ada nama</div>
+    <div class="display-username" id="displayUsername">@belum-diisi</div>
+
+    <div class="field-list">
+      <div class="field-row">
+        <div class="field-label">Username</div>
+        <div class="field-value" id="viewUsername">—</div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Nama Panjang</div>
+        <div class="field-value" id="viewFullName">—</div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Akun Email</div>
+        <div class="field-value" id="viewEmail">—</div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Tanggal Lahir</div>
+        <div class="field-value" id="viewBirthDate">—</div>
+      </div>
+    </div>
+
+    <div class="empty-note" id="emptyNote">Profil kamu masih kosong coo, isi dulu lewat tombol Edit Profile di bawah 👇</div>
+
+    <button class="edit-toggle-btn" id="editToggleBtn" onclick="toggleEditForm()">✏️ Edit Profile</button>
+
+    <div class="edit-form" id="editForm">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="inputUsername" placeholder="cth: budi92">
+      </div>
+      <div class="form-group">
+        <label>Nama Panjang</label>
+        <input type="text" id="inputFullName" placeholder="cth: Budi Santoso">
+      </div>
+      <div class="form-group">
+        <label>Akun Email</label>
+        <input type="email" id="inputEmail" placeholder="cth: budi@email.com">
+      </div>
+      <div class="form-group">
+        <label>Tanggal Lahir</label>
+        <input type="date" id="inputBirthDate">
+      </div>
+      <button class="save-btn" onclick="simpanProfil()">💾 Simpan Profil</button>
+      <button class="cancel-btn" onclick="toggleEditForm()">Batal</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// Key tunggal untuk identitas user, dipakai bareng sama login.html & greeting di index.html
+const PROFILE_KEY = 'profile_data';
+
+function getProfile() {
+  return JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+}
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function formatTanggal(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+let pendingPhoto = null;
+
+function renderProfil() {
+  const p = getProfile();
+
+  document.getElementById('displayName').textContent     = p.fullName || 'Belum ada nama';
+  document.getElementById('displayUsername').textContent  = p.username ? '@' + p.username : '@belum-diisi';
+
+  setFieldView('viewUsername',  p.username);
+  setFieldView('viewFullName',  p.fullName);
+  setFieldView('viewEmail',     p.email);
+  setFieldView('viewBirthDate', p.birthDate ? formatTanggal(p.birthDate) : '');
+
+  const avatarEl = document.getElementById('avatarPreview');
+  if (p.photo) {
+    avatarEl.src = p.photo;
+    avatarEl.classList.remove('empty');
+  } else {
+    avatarEl.src = 'icon.png';
+    avatarEl.classList.add('empty');
+  }
+
+  const isKosong = !p.username && !p.fullName && !p.email && !p.birthDate && !p.photo;
+  document.getElementById('emptyNote').style.display = isKosong ? 'block' : 'none';
+
+  // siapin nilai default di form edit sesuai data yg ada
+  document.getElementById('inputUsername').value  = p.username  || '';
+  document.getElementById('inputFullName').value  = p.fullName  || '';
+  document.getElementById('inputEmail').value     = p.email     || '';
+  document.getElementById('inputBirthDate').value = p.birthDate || '';
+  pendingPhoto = p.photo || null;
+}
+
+function setFieldView(id, value) {
+  const el = document.getElementById(id);
+  if (value) {
+    el.textContent = value;
+    el.classList.remove('is-empty');
+  } else {
+    el.textContent = 'Belum diisi';
+    el.classList.add('is-empty');
+  }
+}
+
+function toggleEditForm() {
+  const form = document.getElementById('editForm');
+  const btn  = document.getElementById('editToggleBtn');
+  const open = form.classList.toggle('open');
+  btn.style.display = open ? 'none' : 'block';
+  if (!open) renderProfil(); // reset form ke data tersimpan kalau batal
+}
+
+document.getElementById('photoInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    pendingPhoto = evt.target.result;
+    const avatarEl = document.getElementById('avatarPreview');
+    avatarEl.src = pendingPhoto;
+    avatarEl.classList.remove('empty');
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+function simpanProfil() {
+  const username  = document.getElementById('inputUsername').value.trim();
+  const fullName  = document.getElementById('inputFullName').value.trim();
+  const email     = document.getElementById('inputEmail').value.trim();
+  const birthDate = document.getElementById('inputBirthDate').value;
+
+  const profile = {
+    username:  username,
+    fullName:  fullName,
+    email:     email,
+    birthDate: birthDate,
+    photo:     pendingPhoto || ''
+  };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+
+  document.getElementById('editForm').classList.remove('open');
+  document.getElementById('editToggleBtn').style.display = 'block';
+  renderProfil();
+  alert('Profil berhasil disimpan coo! 💾');
+}
+
+// ── DRAGGABLE NAV (sama dgn index.html) ──
+const navContainer = document.getElementById('navContainer');
+const navOrb       = document.getElementById('navOrb');
+const navMenu      = document.getElementById('navMenu');
+let isDragging = false, startX, startY, initialX, initialY, hasMoved = false;
+
+navOrb.addEventListener('pointerdown', e => {
+  isDragging = true; hasMoved = false;
+  startX = e.clientX; startY = e.clientY;
+  const r = navContainer.getBoundingClientRect();
+  initialX = r.left; initialY = r.top;
+  navContainer.style.transform = 'none';
+  navContainer.style.top  = initialY + 'px';
+  navContainer.style.left = initialX + 'px';
+  navOrb.setPointerCapture(e.pointerId);
+});
+navOrb.addEventListener('pointermove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - startX, dy = e.clientY - startY;
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true;
+  const newX = Math.max(0, Math.min(window.innerWidth - 60,  initialX + dx));
+  const newY = Math.max(0, Math.min(window.innerHeight - 60, initialY + dy));
+  navContainer.style.left = newX + 'px';
+  navContainer.style.top  = newY + 'px';
+  if (newX > window.innerWidth / 2) { navMenu.style.left = 'auto'; navMenu.style.right = '70px'; }
+  else { navMenu.style.left = '70px'; navMenu.style.right = 'auto'; }
+});
+navOrb.addEventListener('pointerup', e => {
+  if (!isDragging) return;
+  isDragging = false;
+  navOrb.releasePointerCapture(e.pointerId);
+  if (!hasMoved) {
+    navOrb.classList.add('spin');
+    setTimeout(() => navOrb.classList.remove('spin'), 600);
+    navMenu.classList.toggle('open');
+  }
+});
+document.addEventListener('click', e => { if (!navContainer.contains(e.target)) navMenu.classList.remove('open'); });
+
+// ── INIT ──
+renderProfil();
+</script>
+</body>
+</html>

@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Utang Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">  
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">  
+<style>
+  :root {
+    --bg: #08080a;
+    --card-light-1: #dadcdf;
+    --card-light-2: #bcbfc3;
+    --hist-card-1: #c9cbce;
+    --hist-card-2: #b3b6ba;
+    --panel-bg: #0a0a0e;
+    --blue: #3f7fe0;
+    --blue-soft: #7aa8ec;
+    --ink: #15161a;
+    --green: #1f5d3d;
+    --red: #7a2424;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: url('bg.png') no-repeat center center fixed;
+    background-size: cover;
+    background-color: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  .text-stroke {
+    -webkit-text-stroke: 0.5px #000000;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  .app {
+    width: 100%;
+    max-width: 430px;
+    position: relative;
+    padding: 28px 22px 240px; 
+    min-height: 100vh;
+  }
+
+  /* ══════════════════════════
+     FLOATING NAV ORB
+  ══════════════════════════ */
+  .nav-container {
+    position: fixed;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    touch-action: none;
+  }
+
+  .nav-orb {
+    width: 56px;
+    height: 56px;
+    cursor: grab;
+    background: rgba(16, 18, 24, 0.8);
+    border: 2px solid #3a6dd6;
+    border-radius: 50%;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease;
+  }
+  .nav-orb:active { cursor: grabbing; transform: scale(0.95); }
+  .nav-orb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .nav-orb.spin { transform: rotate(360deg); transition: transform 0.6s cubic-bezier(.4,0,.2,1); }
+
+  .nav-menu {
+    position: absolute;
+    left: 70px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    pointer-events: none;
+  }
+
+  .nav-menu button {
+    background: #101218; border: 1px solid #3a6dd6; color: #eef2ff;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px;
+    padding: 10px 18px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4); text-align: left;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .nav-menu button:hover { background: #1a1d27; }
+
+  .nav-menu.open { pointer-events: auto; }
+  .nav-menu.open button { opacity: 1; transform: translateX(0); }
+  .nav-menu.open button:nth-child(1) { transition-delay: 0.05s; }
+  .nav-menu.open button:nth-child(2) { transition-delay: 0.12s; }
+  .nav-menu.open button:nth-child(3) { transition-delay: 0.19s; }
+  .nav-menu.open button:nth-child(4) { transition-delay: 0.26s; }
+  .nav-menu.open button:nth-child(5) { transition-delay: 0.33s; }
+  .nav-menu:not(.open) button { transition-delay: 0s !important; }
+
+  /* ── TOTAL CARD ── */
+  .card-total {
+    position: relative; overflow: hidden;
+    background: linear-gradient(150deg, var(--card-light-1), var(--card-light-2));
+    border-radius: 28px; padding: 26px 26px 22px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+  }
+  
+  .deco-wrap {
+    position: absolute; top: -20px; right: -40px; width: 150px; height: 150px;
+    pointer-events: none; opacity: 0.5;
+    mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.2) 100%);
+    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.2) 100%);
+  }
+  .deco-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  
+  .label-utang { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 2px; margin: 0; color: var(--red); position: relative; z-index: 2; }
+  .total-amount { font-family: 'Playfair Display', serif; font-weight: 800; font-size: clamp(22px, 6vw, 32px); text-align: left; margin: 4px 0 0; position: relative; z-index: 2; }
+  .updated-line {
+    text-align: center; font-family: 'Inter', sans-serif; font-weight: 500; color: #fff;
+    font-size: 12px; margin: 18px 0 0; background: rgba(0,0,0,0.6); padding: 6px 10px; border-radius: 999px; position: relative; z-index: 2;
+  }
+
+  /* ── RIWAYAT PANEL ── */
+  .panel-riwayat {
+    position: relative; margin-top: 30px; background: var(--panel-bg);
+    border: 1.5px solid #2a4f96; border-radius: 28px; padding: 26px 18px 20px;
+    box-shadow: 0 0 36px rgba(63,127,224,0.12) inset;
+  }
+  .label-riwayat { color: #fff; text-align: center; font-family: 'Playfair Display', serif; font-weight: 700; letter-spacing: 2px; font-size: 16px; margin: 0 0 18px; }
+  .history-list { display: flex; flex-direction: column; gap: 14px; }
+  
+  .hist-card {
+    background: linear-gradient(150deg, var(--hist-card-1), var(--hist-card-2));
+    border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
+    position: relative; animation: slideIn .35s ease; cursor: pointer;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hist-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; pointer-events: none; }
+  .hist-name { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 16px; }
+  .hist-date { font-family: 'Inter', sans-serif; font-weight: 500; font-size: 11px; white-space: nowrap; }
+  .hist-amount { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 19px; text-align: right; color: var(--red); pointer-events: none; }
+
+  .delete-btn {
+    position: absolute; top: -6px; right: -6px; z-index: 10;
+    background: #e74c3c; border: none; border-radius: 50%;
+    color: #fff; font-size: 10px; font-weight: bold; width: 18px; height: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .empty-state { text-align: center; padding: 30px 14px; color: #9aa3c2; font-size: 13px; line-height: 1.6; }
+  .empty-state strong { display: block; color: #e7eaf5; font-family: 'Playfair Display', serif; font-size: 15px; margin-bottom: 6px; }
+
+  /* ── BOTTOM SHEETS ── */
+  .bottom-sheet {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex; flex-direction: column; align-items: center; z-index: 60; gap: 6px;
+  }
+  .sheet-inner {
+    width: 100%; max-width: 430px; background: #16171c; border: 1.5px solid #2a4f96;
+    border-radius: 22px 22px 0 0; overflow: hidden; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+  }
+  .sheet-toggle {
+    width: 100%; border: none; background: linear-gradient(135deg, #1f2128, #2a2e3d);
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px;
+    padding: 12px; cursor: pointer; color: #cfd2dd; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .sheet-toggle.main-trigger {
+    background: linear-gradient(150deg, var(--card-light-1), var(--card-light-2)); color: var(--ink); font-family: 'Playfair Display', serif; font-weight: 700; font-size: 16px; padding: 16px;
+  }
+  .sheet-form { max-height: 0; overflow: hidden; transition: max-height .35s ease; background: #16171c; }
+  .sheet-form.open { max-height: 450px; overflow-y: auto; }
+  .sheet-form-inner { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 12px; }
+
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 11px; color: #7b7f8c; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+  .field {
+    width: 100%; padding: 12px 14px; border-radius: 12px; border: 1.5px solid #353947;
+    background: #1f2128; color: #fff; font-family: 'Inter', sans-serif; font-size: 14px; outline: none;
+  }
+  .field::placeholder { color: #7b7f8c; }
+  
+  /* Biar option dropdown di Android/iOS ttp keliatan jelas & background-nya item */
+  select.field option { background: #16171c; color: #fff; padding: 10px; }
+
+  .submit-btn {
+    padding: 13px; border: none; border-radius: 12px;
+    background: var(--blue); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 4px;
+  }
+  .submit-btn:hover { background: var(--blue-soft); }
+  .submit-btn.green-btn { background: #1f5d3d; }
+  .submit-btn.green-btn:hover { background: #2ebd70; }
+
+  /* ── MODAL POPUP ── */
+  #paymentModal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    z-index: 100; display: flex; align-items: center; justify-content: center;
+    padding: 22px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  #paymentModal.show { opacity: 1; pointer-events: all; }
+  .modal-inner {
+    width: 100%; max-width: 390px; background: #0a0a0e; border: 1.5px solid #2a4f96;
+    border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6); color: #fff;
+  }
+  .modal-title { text-align: center; font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .modal-info-box { background: #1f2128; border: 1.5px solid #353947; padding: 14px; border-radius: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .modal-info-row { display: flex; justify-content: space-between; font-size: 13.5px; }
+  .modal-info-row .label { color: #7b7f8c; }
+  .modal-info-row .val { font-weight: 700; }
+  .modal-close-btn { background: none; border: none; color: #7b7f8c; font-size: 18px; cursor: pointer; align-self: flex-end; margin-bottom: -10px; }
+  .modal-close-btn:hover { color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="nav-container" id="navContainer">
+    <div class="nav-orb" id="navOrb">
+      <img src="icon.png" alt="Logo">
+    </div>
+    <div class="nav-menu" id="navMenu">
+      <button data-action="index.html">  Menu</button>
+      <button data-action="history.html">  Riwayat Duit</button>
+      <button data-action="debt.html">  Utang</button>
+      <button data-action="grafik.html">  Grafik</button>
+      <button data-action="notes.html">  Notes</button>
+    </div>
+  </div>
+
+  <div class="card-total">
+    <div class="deco-wrap"><img src="icon.png" alt="Icon"></div>
+    <p class="label-utang text-stroke">TOTAL UTANG :</p>
+    <h1 class="total-amount" id="totalDebtDisplay">Rp 0</h1>
+    <p class="updated-line">Waktu: <span id="liveClock">—</span></p>
+  </div>
+
+  <div class="panel-riwayat" id="panelRiwayat">
+    <p class="label-riwayat">RIWAYAT UTANG :</p>
+    <div class="history-list" id="historyList">
+      <div class="empty-state">
+        <strong>Riwayat masih kosong</strong>
+        Tambahkan transaksi utang pertamamu lewat tombol di bawah.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-sheet">
+  
+  <div class="sheet-inner">
+    <button class="sheet-toggle" onclick="toggleSheet('methodSheet')">💳 + Tambah Metode Pembayaran</button>
+    <div class="sheet-form" id="methodSheet">
+      <div class="sheet-form-inner">
+        <div class="form-group">
+          <label>Jenis Metode</label>
+          <select id="methodType" class="field" onchange="handleMethodTypeChange()">
+            <option value="Bank">Bank (Transfer)</option>
+            <option value="E-Wallet">E-Wallet</option>
+            <option value="QRIS">QRIS (Scan Gambar)</option>
+          </select>
+        </div>
+        
+        <div id="dynamicMethodFields">
+          <div class="form-group">
+            <label id="nameLabel">Nama Bank</label>
+            <select id="methodName" class="field">
+              <option value="BRI">BRI</option>
+              <option value="BCA">BCA</option>
+              <option value="Mandiri">Mandiri</option>
+              <option value="SeaBank">SeaBank</option>
+              <option value="Krom Bank">Krom Bank</option>
+              <option value="Bank Jago">Bank Jago</option>
+              <option value="NeoBank">NeoBank</option>
+              <option value="BNI">BNI</option>
+              <option value="BSI">BSI</option>
+            </select>
+          </div>
+          <div class="form-group" id="numberGroup">
+            <label id="numberLabel">No Rekening</label>
+            <input type="text" id="methodNumber" class="field" placeholder="Masukkan nomor rekening" />
+          </div>
+        </div>
+        
+        <button class="submit-btn green-btn" onclick="addPaymentMethod()">Simpan Metode</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-inner">
+    <button class="sheet-toggle main-trigger" onclick="toggleSheet('debtSheet')">+ Tambah Utang</button>
+    <div class="sheet-form" id="debtSheet">
+      <div class="sheet-form-inner">
+        <div class="form-group">
+          <label>Nama / Keterangan</label>
+          <input type="text" id="inputName" class="field" placeholder="cth: Si Biji" />
+        </div>
+        <div class="form-group">
+          <label>Jumlah Utang</label>
+          <input type="number" id="inputDebt" class="field" placeholder="Rp 0" min="0">
+        </div>
+        <button class="submit-btn" onclick="addEntry()">Tambahkan ke Riwayat</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="paymentModal">
+  <div class="modal-inner">
+    <button class="modal-close-btn" onclick="closePaymentModal()">✕</button>
+    <div class="modal-title">Konfirmasi Bayar Utang</div>
+    
+    <div class="modal-info-box">
+      <div class="modal-info-row">
+        <span class="label">Nama Pengutang:</span>
+        <span class="val" id="modalDebtName">—</span>
+      </div>
+      <div class="modal-info-row">
+        <span class="label">Jumlah Utang:</span>
+        <span class="val text-stroke" id="modalDebtAmount" style="color: var(--red);">—</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label style="color:#7b7f8c;">Pilih Metode Pembayaran</label>
+      <select id="modalPayMethodSelect" class="field" onchange="handleModalMethodSelectChange()" style="background:#1f2128;">
+      </select>
+    </div>
+
+    <div id="modalMethodDetails" class="modal-info-box" style="display: none;">
+    </div>
+
+    <button class="submit-btn" onclick="goToPaymentPage()" style="background:var(--blue);">Confirm & Bayar</button>
+  </div>
+</div>
+
+<script>
+  /* ── state ── */
+  let entries = JSON.parse(localStorage.getItem('utang_entries') || '[]');
+  let paymentMethods = JSON.parse(localStorage.getItem('payment_methods') || '[]');
+  let activeDebtIndexForPay = null;
+
+  /* ── helpers ── */
+  function formatRupiah(n) {
+    return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+  }
+
+  function formatDateTime(dateObj) {
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    return `${days[dateObj.getDay()] ?? 'Senin'}, ${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()} — ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}:${String(dateObj.getSeconds()).padStart(2, '0')}`;
+  }
+
+  /* ── clock ── */
+  setInterval(() => {
+    document.getElementById('liveClock').textContent = formatDateTime(new Date());
+  }, 1000);
+
+  /* ── MERUBAH FIELD METODE SECARA DINAMIS ── */
+  function handleMethodTypeChange() {
+    const type = document.getElementById('methodType').value;
+    const dynamicFields = document.getElementById('dynamicMethodFields');
+
+    if (type === 'Bank') {
+      dynamicFields.innerHTML = `
+        <div class="form-group">
+          <label id="nameLabel">Nama Bank</label>
+          <select id="methodName" class="field">
+            <option value="BRI">BRI</option>
+            <option value="BCA">BCA</option>
+            <option value="Mandiri">Mandiri</option>
+            <option value="SeaBank">SeaBank</option>
+            <option value="Krom Bank">Krom Bank</option>
+            <option value="Bank Jago">Bank Jago</option>
+            <option value="NeoBank">NeoBank</option>
+            <option value="BNI">BNI</option>
+            <option value="BSI">BSI</option>
+          </select>
+        </div>
+        <div class="form-group" id="numberGroup">
+          <label id="numberLabel">No Rekening</label>
+          <input type="text" id="methodNumber" class="field" placeholder="Masukkan nomor rekening" />
+        </div>`;
+    } else if (type === 'E-Wallet') {
+      dynamicFields.innerHTML = `
+        <div class="form-group">
+          <label id="nameLabel">Nama E-Wallet</label>
+          <select id="methodName" class="field">
+            <option value="GoPay">GoPay</option>
+            <option value="DANA">DANA</option>
+            <option value="OVO">OVO</option>
+            <option value="ShopeePay">ShopeePay</option>
+            <option value="LinkAja">LinkAja</option>
+          </select>
+        </div>
+        <div class="form-group" id="numberGroup">
+          <label id="numberLabel">No E-Wallet / HP</label>
+          <input type="text" id="methodNumber" class="field" placeholder="Masukkan nomor HP" />
+        </div>`;
+    } else if (type === 'QRIS') {
+      dynamicFields.innerHTML = `
+        <div class="form-group">
+          <label id="nameLabel">Keterangan QRIS</label>
+          <input type="text" id="methodName" class="field" placeholder="cth: QRIS Utama / Toko" />
+        </div>
+        <div class="form-group" id="numberGroup">
+          <label>Upload Gambar QRIS</label>
+          <input type="file" id="methodFile" class="field" accept="image/*" style="padding:8px;"/>
+        </div>`;
+    }
+  }
+
+  /* ── render list ── */
+  function render() {
+    const list = document.getElementById('historyList');
+    let total = 0;
+    entries.forEach(e => { total += e.debt || 0; });
+    document.getElementById('totalDebtDisplay').textContent = formatRupiah(total);
+
+    if (entries.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <strong>Riwayat masih kosong</strong>
+          Tambahkan transaksi utang pertamamu lewat tombol di bawah.
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = entries.map((e, i) => `
+      <div class="hist-card" onclick="openPaymentModal(${i}, event)">
+        <button class="delete-btn" onclick="deleteEntry(${i}, event)" title="Hapus">✕</button>
+        <div class="hist-row-top">
+          <span class="hist-name">${escHtml(e.name)}</span>
+          <span class="hist-date">${e.datetimeStr}</span>
+        </div>
+        <div class="hist-amount text-stroke">- ${formatRupiah(e.debt)}</div>
+      </div>
+    `).join('');
+  }
+
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function save() { localStorage.setItem('utang_entries', JSON.stringify(entries)); }
+
+  function addEntry() {
+    const name = document.getElementById('inputName').value.trim();
+    const debt = parseFloat(document.getElementById('inputDebt').value) || 0;
+    if (!name) { alert('Masukkan nama pengutang dulu coo!'); return; }
+    if (!debt || debt <= 0) { alert('Masukkan jumlah utang!'); return; }
+
+    entries.unshift({ name, debt, datetimeStr: formatDateTime(new Date()) });
+    save(); render();
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputDebt').value = '';
+    closeSheet('debtSheet');
+  }
+
+  function deleteEntry(i, event) {
+    event.stopPropagation();
+    if (!confirm('Hapus riwayat ini coo?')) return;
+    entries.splice(i, 1);
+    save(); render();
+  }
+
+  /* ── FIX LOGIC ADD PAYMENT METHOD ── */
+  function addPaymentMethod() {
+    const type = document.getElementById('methodType').value;
+    const nameInput = document.getElementById('methodName');
+    
+    // Ambil value langsung dari select/input element secara aman
+    const name = nameInput ? nameInput.value.trim() : '';
+    if(!name) { alert('Masukkan/pilih nama penyedia dulu coo!'); return; }
+
+    if(type === 'QRIS') {
+      const fileInput = document.getElementById('methodFile');
+      if(!fileInput || !fileInput.files[0]) { alert('Upload gambarnya dulu coo!'); return; }
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        paymentMethods.push({ type, name, qrisDataUrl: e.target.result });
+        localStorage.setItem('payment_methods', JSON.stringify(paymentMethods));
+        alert('Metode QRIS sukses disimpan!');
+        resetMethodForm();
+      };
+      reader.readAsDataURL(fileInput.files[0]);
+    } else {
+      const numInput = document.getElementById('methodNumber');
+      const number = numInput ? numInput.value.trim() : '';
+      if(!number) { alert('Masukkan nomor rekening / nomor ewallet!'); return; }
+      
+      paymentMethods.push({ type, name, number });
+      localStorage.setItem('payment_methods', JSON.stringify(paymentMethods));
+      alert('Metode Pembayaran berhasil disimpan!');
+      resetMethodForm();
+    }
+  }
+
+  function resetMethodForm() {
+    document.getElementById('methodType').value = 'Bank';
+    handleMethodTypeChange();
+    closeSheet('methodSheet');
+  }
+
+  function openPaymentModal(index, event) {
+    if (isDragging) return; 
+    activeDebtIndexForPay = index;
+    const item = entries[index];
+    
+    document.getElementById('modalDebtName').textContent = item.name;
+    document.getElementById('modalDebtAmount').textContent = formatRupiah(item.debt);
+    
+    const select = document.getElementById('modalPayMethodSelect');
+    select.innerHTML = '<option value="">-- Pilih Metode Pembayaran --</option>';
+    
+    // Refresh list pembayaran terdaftar dari LocalStorage
+    paymentMethods = JSON.parse(localStorage.getItem('payment_methods') || '[]');
+    paymentMethods.forEach((method, i) => {
+      select.innerHTML += `<option value="${i}">[${method.type}] ${method.name}</option>`;
+    });
+
+    document.getElementById('modalMethodDetails').style.display = 'none';
+    document.getElementById('paymentModal').classList.add('show');
+  }
+
+  function handleModalMethodSelectChange() {
+    const val = document.getElementById('modalPayMethodSelect').value;
+    const detailsBox = document.getElementById('modalMethodDetails');
+    
+    if(!val) { detailsBox.style.display = 'none'; return; }
+    
+    const method = paymentMethods[parseInt(val)];
+    detailsBox.style.display = 'block';
+    
+    if(method.type === 'QRIS') {
+      detailsBox.innerHTML = `
+        <div class="modal-info-row"><span class="label">Tipe:</span><span class="val">QRIS Image</span></div>
+        <div style="text-align:center; margin-top:5px; color:var(--blue-soft); font-size:11px;">Gambar siap diparsing ke halaman payment</div>
+      `;
+    } else {
+      const numLabel = method.type === 'Bank' ? 'No Rekening:' : 'No HP/E-Wallet:';
+      detailsBox.innerHTML = `
+        <div class="modal-info-row"><span class="label">Nama:</span><span class="val">${method.name}</span></div>
+        <div class="modal-info-row"><span class="label">${numLabel}</span><span class="val">${method.number}</span></div>
+      `;
+    }
+  }
+
+  function closePaymentModal() { document.getElementById('paymentModal').classList.remove('show'); }
+
+  function goToPaymentPage() {
+    const selectedMethodIdx = document.getElementById('modalPayMethodSelect').value;
+    if(!selectedMethodIdx) { alert('Pilih metode pembayaran dulu coo!'); return; }
+
+    const debtItem = entries[activeDebtIndexForPay];
+    const methodItem = paymentMethods[parseInt(selectedMethodIdx)];
+
+    sessionStorage.setItem('current_pay_name', debtItem.name);
+    sessionStorage.setItem('current_pay_amount', debtItem.debt);
+    sessionStorage.setItem('current_pay_method_type', methodItem.type);
+    sessionStorage.setItem('current_pay_method_name', methodItem.name);
+    
+    if(methodItem.type === 'QRIS') {
+      sessionStorage.setItem('current_pay_qris_img', methodItem.qrisDataUrl);
+      sessionStorage.removeItem('current_pay_number');
+    } else {
+      sessionStorage.setItem('current_pay_number', methodItem.number);
+      sessionStorage.removeItem('current_pay_qris_img');
+    }
+
+    window.location.href = 'payment.html';
+  }
+
+  /* ── DRAGGABLE ENGINE ── */
+  const container = document.getElementById('navContainer');
+  const orb = document.getElementById('navOrb');
+  const menu = document.getElementById('navMenu');
+  
+  let isDragging = false;
+  let startX, startY;
+  let initialX, initialY;
+  let hasMoved = false;
+
+  orb.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    hasMoved = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    
+    const rect = container.getBoundingClientRect();
+    initialX = rect.left;
+    initialY = rect.top;
+    
+    container.style.transform = 'none';
+    container.style.top = initialY + 'px';
+    container.style.left = initialX + 'px';
+    
+    orb.setPointerCapture(e.pointerId);
+  });
+
+  orb.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      hasMoved = true;
+    }
+    
+    let newX = initialX + dx;
+    let newY = initialY + dy;
+    
+    newX = Math.max(0, Math.min(window.innerWidth - 60, newX));
+    newY = Math.max(0, Math.min(window.innerHeight - 60, newY));
+    
+    container.style.left = newX + 'px';
+    container.style.top = newY + 'px';
+
+    if (newX > window.innerWidth / 2) {
+      menu.style.left = 'auto';
+      menu.style.right = '70px';
+    } else {
+      menu.style.left = '70px';
+      menu.style.right = 'auto';
+    }
+  });
+
+  orb.addEventListener('pointerup', (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    orb.releasePointerCapture(e.pointerId);
+    
+    if (!hasMoved) {
+      orb.classList.add('spin');
+      setTimeout(() => orb.classList.remove('spin'), 600);
+      menu.classList.toggle('open');
+    }
+    
+    setTimeout(() => { hasMoved = false; }, 50);
+  });
+
+  menu.addEventListener('click', (e) => {
+    const action = e.target.dataset.action;
+    if(!action) return;
+    menu.classList.remove('open');
+    window.location.href = action;
+  });
+
+  document.addEventListener('click', (e) => {
+    if(!container.contains(e.target)) {
+      menu.classList.remove('open');
+    }
+  });
+
+  function toggleSheet(id) {
+    const sheet = document.getElementById(id);
+    if(sheet.classList.contains('open')) {
+      sheet.classList.remove('open');
+    } else {
+      document.querySelectorAll('.sheet-form').forEach(f => f.classList.remove('open'));
+      sheet.classList.add('open');
+    }
+  }
+  function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+
+  /* ── init ── */
+  render();
+</script>
+</body>
+</html>

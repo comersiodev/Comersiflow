@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Login · Arc Cashflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080a;
+    --panel-bg: #0a0a0e;
+    --blue: #2d63d8;
+    --blue-soft: #5b8bf7;
+    --ink: #15161a;
+    --green: #0e9870;
+    --red: #d43838;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: url("bg.png") center/cover no-repeat fixed;
+    background-color: var(--bg);
+    min-height: 100vh;
+    padding: 15px 15px 100px;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+  }
+
+  .container { width: 100%; max-width: 750px; position: relative; }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--panel-bg); border: 2px solid var(--blue); border-radius: 24px;
+    padding: 18px; margin-bottom: 18px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .back-btn {
+    width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--blue);
+    background: #16171c; color: #fff; display: flex; align-items: center; justify-content: center;
+    text-decoration: none; font-size: 18px; flex-shrink: 0;
+  }
+  .header h1 { font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 800; color: var(--blue-soft); }
+
+  /* ── LOGIN CARD ── */
+  .login-card {
+    background: var(--panel-bg); border: 2px solid var(--blue); border-radius: 28px;
+    padding: 30px 24px; margin-bottom: 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .login-icon {
+    width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--blue);
+    background: #16171c; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; font-size: 28px;
+  }
+  .login-card h2 { text-align: center; font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .login-sub { text-align: center; font-size: 12.5px; color: #777; margin-bottom: 22px; line-height: 1.6; }
+
+  .form-group { margin-bottom: 14px; text-align: left; }
+  .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--blue-soft); margin-bottom: 6px; }
+  .form-group input {
+    width: 100%; padding: 13px 14px; border: 1px solid #333; background: #111217;
+    border-radius: 12px; font-family: 'Inter', sans-serif; font-weight: 600; color: #fff; outline: none; font-size: 14px;
+  }
+  .form-group input:focus { border-color: var(--blue); }
+
+  .login-btn {
+    width: 100%; padding: 14px; background: var(--blue); color: #fff; border: none;
+    border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; transition: .15s; margin-top: 6px;
+  }
+  .login-btn:hover { background: var(--blue-soft); }
+  .login-btn:active { transform: scale(.98); }
+
+  .cloud-note {
+    margin-top: 16px; background: #16171c; border: 1px dashed #333; border-radius: 14px;
+    padding: 12px 14px; font-size: 11.5px; color: #666; line-height: 1.6; text-align: center;
+  }
+
+  .saved-banner {
+    display: none; margin-top: 16px; background: rgba(14,152,112,0.12); border: 1px solid var(--green);
+    border-radius: 14px; padding: 12px 14px; font-size: 12.5px; color: var(--green); font-weight: 700; text-align: center;
+  }
+  .saved-banner.show { display: block; }
+
+  /* ── FLOATING NAV ORB (sama dgn index.html) ── */
+  .nav-container { position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; align-items: center; touch-action: none; }
+  .nav-orb {
+    width: 56px; height: 56px; cursor: grab; background: rgba(16,18,24,0.9);
+    border: 2px solid var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.2s ease;
+  }
+  .nav-orb:active { cursor: grabbing; transform: scale(0.95); }
+  .nav-orb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .nav-orb.spin { transform: rotate(360deg); transition: transform 0.6s cubic-bezier(.4,0,.2,1); }
+  .nav-menu { position: absolute; left: 70px; display: flex; flex-direction: column; gap: 9px; pointer-events: none; }
+  .nav-menu a {
+    background: #101218; border: 1px solid var(--blue); color: #eef2ff; font-weight: 600; font-size: 13px;
+    text-decoration: none; padding: 10px 18px; border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px;
+    opacity: 0; transform: translateX(-20px);
+    transition: opacity 0.3s cubic-bezier(0.34,1.56,0.64,1), transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .nav-menu a:hover { background: #1a1d27; color: var(--blue-soft); }
+  .nav-menu.open { pointer-events: auto; }
+  .nav-menu.open a { opacity: 1; transform: translateX(0); }
+  .nav-menu.open a:nth-child(1) { transition-delay: 0.05s; }
+  .nav-menu.open a:nth-child(2) { transition-delay: 0.12s; }
+  .nav-menu.open a:nth-child(3) { transition-delay: 0.19s; }
+  .nav-menu.open a:nth-child(4) { transition-delay: 0.26s; }
+  .nav-menu.open a:nth-child(5) { transition-delay: 0.33s; }
+  .nav-menu.open a:nth-child(6) { transition-delay: 0.40s; }
+  .nav-menu:not(.open) a { transition-delay: 0s !important; }
+</style>
+</head>
+<body>
+
+<div class="nav-container" id="navContainer">
+  <div class="nav-orb" id="navOrb">
+    <img src="icon.png" alt="Logo">
+  </div>
+  <div class="nav-menu" id="navMenu">
+    <a href="index.html">  Beranda</a>
+    <a href="profile.html">  Profile</a>
+    <a href="history.html">  Riwayat Duit</a>
+    <a href="billing.html">  Tagihan Utang</a>
+    <a href="utang.html">  Utang</a>
+    <a href="notes.html">  Notes</a>
+    <a href="grafik.html">  Grafik</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="login-card">
+    <div class="login-icon">👤</div>
+    <h2>Masuk ke Comersiflow</h2>
+    <p class="login-sub">Isi identitas kamu biar sapaan di Beranda sesuai nama kamu. Ini cuma disimpan di HP/browser kamu sendiri.</p>
+
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="loginUsername" placeholder="cth: budi92">
+    </div>
+    <div class="form-group">
+      <label>Nama Panjang</label>
+      <input type="text" id="loginFullName" placeholder="cth: Budi Santoso">
+    </div>
+    <div class="form-group">
+      <label>Akun Email</label>
+      <input type="email" id="loginEmail" placeholder="cth: budi@email.com">
+    </div>
+
+    <button class="login-btn" onclick="prosesLogin()">Masuk &amp; Simpan</button>
+
+    <div class="saved-banner" id="savedBanner">✅ Berhasil disimpan, balik ke Beranda yuk!</div>
+
+    <div class="cloud-note">⚠️ Belum ada sign-in ke cloud. Data ini cuma tersimpan lokal di perangkat ini — kalau ganti HP/browser, isi ulang lagi yaa.</div>
+  </div>
+
+</div>
+
+<script>
+const PROFILE_KEY = 'profile_data';
+
+function getProfile() {
+  return JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+}
+
+function isiFormDariProfil() {
+  const p = getProfile();
+  document.getElementById('loginUsername').value = p.username || '';
+  document.getElementById('loginFullName').value = p.fullName || '';
+  document.getElementById('loginEmail').value    = p.email    || '';
+}
+
+function prosesLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const fullName = document.getElementById('loginFullName').value.trim();
+  const email    = document.getElementById('loginEmail').value.trim();
+
+  if (!username && !fullName) {
+    alert('Isi minimal username atau nama panjang dulu coo!');
+    return;
+  }
+
+  // Gabung sama profile_data yg udah ada, biar birthDate & photo dari profile.html nggak ketimpa
+  const existing = getProfile();
+  const updated = {
+    ...existing,
+    username: username,
+    fullName: fullName,
+    email: email
+  };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(updated));
+  localStorage.setItem('session_active', 'true');
+
+  document.getElementById('savedBanner').classList.add('show');
+  setTimeout(() => { window.location.href = 'index.html'; }, 900);
+}
+
+// ── DRAGGABLE NAV (sama dgn index.html) ──
+const navContainer = document.getElementById('navContainer');
+const navOrb       = document.getElementById('navOrb');
+const navMenu      = document.getElementById('navMenu');
+let isDragging = false, startX, startY, initialX, initialY, hasMoved = false;
+
+navOrb.addEventListener('pointerdown', e => {
+  isDragging = true; hasMoved = false;
+  startX = e.clientX; startY = e.clientY;
+  const r = navContainer.getBoundingClientRect();
+  initialX = r.left; initialY = r.top;
+  navContainer.style.transform = 'none';
+  navContainer.style.top  = initialY + 'px';
+  navContainer.style.left = initialX + 'px';
+  navOrb.setPointerCapture(e.pointerId);
+});
+navOrb.addEventListener('pointermove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - startX, dy = e.clientY - startY;
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true;
+  const newX = Math.max(0, Math.min(window.innerWidth - 60,  initialX + dx));
+  const newY = Math.max(0, Math.min(window.innerHeight - 60, initialY + dy));
+  navContainer.style.left = newX + 'px';
+  navContainer.style.top  = newY + 'px';
+  if (newX > window.innerWidth / 2) { navMenu.style.left = 'auto'; navMenu.style.right = '70px'; }
+  else { navMenu.style.left = '70px'; navMenu.style.right = 'auto'; }
+});
+navOrb.addEventListener('pointerup', e => {
+  if (!isDragging) return;
+  isDragging = false;
+  navOrb.releasePointerCapture(e.pointerId);
+  if (!hasMoved) {
+    navOrb.classList.add('spin');
+    setTimeout(() => navOrb.classList.remove('spin'), 600);
+    navMenu.classList.toggle('open');
+  }
+});
+document.addEventListener('click', e => { if (!navContainer.contains(e.target)) navMenu.classList.remove('open'); });
+
+// ── INIT ──
+isiFormDariProfil();
+</script>
+</body>
+</html>

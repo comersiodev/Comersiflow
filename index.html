@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Arc Cashflow</title>
+<script>
+  // Gerbang login: kalau belum login, lempar ke login.html dulu sebelum render apapun
+  if (localStorage.getItem('session_active') !== 'true') {
+    window.location.replace('login.html');
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">  
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">  
+<style>
+  :root {
+    --bg: #08080a;
+    --card-light-1: #dadcdf;
+    --card-light-2: #bcbfc3;
+    --hist-card-1: #c9cbce;
+    --hist-card-2: #b3b6ba;
+    --panel-bg: #0a0a0e;
+    --blue: #2d63d8;
+    --blue-soft: #5b8bf7;
+    --ink: #15161a;
+    --green: #0e9870;
+    --red: #d43838;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: url("bg.png") center/cover no-repeat fixed;
+    background-color: var(--bg);
+    min-height: 100vh;
+    padding: 15px 15px 100px;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+  }
+
+  .container { width: 100%; max-width: 750px; position: relative; }
+
+  .text-stroke {
+    -webkit-text-stroke: 0.5px #000000;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--panel-bg);
+    border: 2px solid var(--blue);
+    border-radius: 24px;
+    padding: 18px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .welcome-card { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .welcome-card a.avatar-link { flex-shrink: 0; }
+  .welcome-card .mini-avatar {
+    width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--blue); background: #16171c; display: block;
+  }
+  .welcome-card .mini-avatar.empty { padding: 9px; object-fit: contain; opacity: .5; }
+  .welcome-text { min-width: 0; }
+  .welcome-card h3 { color: var(--blue-soft); font-size: 18px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .welcome-card p { color: #fff; font-size: 20px; font-weight: 700; font-family: 'Playfair Display', serif; }
+  #datetime { margin-top: 4px; font-size: 11px; opacity: .6; color: #fff; }
+
+  .action-group { display: flex; gap: 10px; flex-shrink: 0; }
+  .action-group button {
+    padding: 10px 16px; min-height: 45px; border: 1px solid var(--blue); border-radius: 12px;
+    background: #16171c; color: #fff; font-weight: 700; font-size: 13px;
+    cursor: pointer; transition: .15s; font-family: 'Inter', sans-serif;
+  }
+  .action-group button:active { transform: scale(.95); }
+
+  /* ── SALDO CARD ── */
+  .saldo-card {
+    position: relative; overflow: hidden;
+    background: linear-gradient(150deg, var(--card-light-1), var(--card-light-2));
+    border-radius: 32px; padding: 26px; margin-bottom: 18px;
+    box-shadow: 0 14px 35px rgba(0,0,0,0.4); color: var(--ink);
+  }
+  .saldo-bg {
+    position: absolute; right: -20px; top: 10px; width: 160px; pointer-events: none;
+    mask-image: linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%);
+    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%);
+  }
+  .saldo-card h2 { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; color: rgba(0,0,0,0.6); }
+  #saldoTotal { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 900; margin-bottom: 18px; color: var(--ink); }
+  .summary { display: flex; flex-direction: column; gap: 8px; position: relative; z-index: 2; }
+  .summary p { font-size: 14px; font-weight: 700; color: #222; }
+  .piutang-line span { color: var(--green); }
+  .utang-line span { color: var(--red); }
+  .history-line span { color: var(--blue); }
+  .keluar-line span { color: var(--red); }
+
+  /* ── FLOATING NAV ORB ── */
+  .nav-container {
+    position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
+    z-index: 2000; display: flex; align-items: center; touch-action: none;
+  }
+  .nav-orb {
+    width: 56px; height: 56px; cursor: grab; background: rgba(16,18,24,0.9);
+    border: 2px solid var(--blue); border-radius: 50%; display: flex;
+    align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.2s ease;
+  }
+  .nav-orb:active { cursor: grabbing; transform: scale(0.95); }
+  .nav-orb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .nav-orb.spin { transform: rotate(360deg); transition: transform 0.6s cubic-bezier(.4,0,.2,1); }
+  .nav-menu {
+    position: absolute; left: 70px; display: flex; flex-direction: column;
+    gap: 9px; pointer-events: none;
+  }
+  .nav-menu a {
+    background: #101218; border: 1px solid var(--blue); color: #eef2ff;
+    font-weight: 600; font-size: 13px; text-decoration: none;
+    padding: 10px 18px; border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px;
+    opacity: 0; transform: translateX(-20px);
+    transition: opacity 0.3s cubic-bezier(0.34,1.56,0.64,1), transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .nav-menu a:hover { background: #1a1d27; color: var(--blue-soft); }
+  .nav-menu.open { pointer-events: auto; }
+  .nav-menu.open a { opacity: 1; transform: translateX(0); }
+  .nav-menu.open a:nth-child(1) { transition-delay: 0.05s; }
+  .nav-menu.open a:nth-child(2) { transition-delay: 0.12s; }
+  .nav-menu.open a:nth-child(3) { transition-delay: 0.19s; }
+  .nav-menu.open a:nth-child(4) { transition-delay: 0.26s; }
+  .nav-menu.open a:nth-child(5) { transition-delay: 0.33s; }
+  .nav-menu.open a:nth-child(6) { transition-delay: 0.40s; }
+  .nav-menu.open a:nth-child(7) { transition-delay: 0.47s; }
+  .nav-menu:not(.open) a { transition-delay: 0s !important; }
+
+  /* ── MENU GRID ── */
+  .menu-card {
+    background: var(--panel-bg); border: 2px solid var(--blue);
+    border-radius: 28px; padding: 22px; margin-bottom: 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .menu-title { text-align: center; font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 800; margin-bottom: 18px; color: var(--blue-soft); letter-spacing: 1px; }
+  .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .menu-grid a {
+    text-decoration: none; color: #fff; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    font-size: 13px; font-weight: 600; transition: .15s;
+    background: #111217; padding: 12px 6px; border-radius: 16px; border: 1px solid #222;
+  }
+  .menu-grid a:active { transform: scale(.92); }
+  .menu-grid img { width: 56px; height: 56px; object-fit: contain; margin-bottom: 8px; }
+
+  /* ── NOTES PREVIEW ── */
+  .notes-section {
+    background: var(--panel-bg); border: 2px solid var(--blue);
+    border-radius: 28px; padding: 22px; margin-bottom: 18px;
+  }
+  .notes-section h2 { text-align: center; font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 15px; color: var(--blue-soft); }
+  #notesContainer { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+  #notesContainer::-webkit-scrollbar { height: 4px; }
+  #notesContainer::-webkit-scrollbar-track { background: transparent; }
+  #notesContainer::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 99px; }
+
+  .note-preview-card {
+    min-width: 180px; max-width: 220px; background: #111217;
+    border: 1px solid #2a2d3d; border-radius: 14px; padding: 14px;
+    flex-shrink: 0;
+  }
+  .note-preview-card strong { display: block; color: var(--blue-soft); margin-bottom: 6px; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .note-preview-card .note-preview-body { font-size: 12px; color: #888; line-height: 1.5; max-height: 48px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  .note-preview-card span { display: block; font-size: 10px; color: #444; margin-top: 8px; font-weight: 600; }
+
+  .notes-empty { color: #555; font-size: 13px; font-weight: 600; text-align: center; width: 100%; padding: 10px 0; }
+
+  /* ── RIWAYAT ── */
+  .riwayat-container {
+    background: var(--panel-bg); border: 2px solid var(--blue);
+    border-radius: 28px; padding: 22px; margin-bottom: 18px;
+  }
+  .riwayat-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 15px; text-align: center; }
+  .riwayat-list { display: flex; flex-direction: column; gap: 12px; }
+  .riwayat-item {
+    background: linear-gradient(150deg, var(--hist-card-1), var(--hist-card-2));
+    border-radius: 16px; padding: 14px 18px; display: flex; justify-content: space-between;
+    font-weight: 700; color: var(--ink); align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+  .riwayat-item.masuk-type .amt-badge { color: var(--green) !important; }
+  .riwayat-item.keluar-type .amt-badge { color: var(--red) !important; }
+
+  /* ── INPUT SECTION ── */
+  .bottom-action {
+    background: var(--panel-bg); border: 2px solid var(--blue);
+    border-radius: 28px; padding: 20px; text-align: center; margin-bottom: 18px;
+  }
+  .bottom-action h4 { margin-bottom: 14px; font-size: 15px; color: var(--blue-soft); font-weight: 700; }
+  .type-toggle { display: flex; gap: 10px; margin-bottom: 10px; }
+  .type-btn {
+    flex: 1; padding: 10px; border-radius: 12px; border: 1px solid #222;
+    background: #111217; color: #aaa; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s;
+  }
+  .type-btn.active.masuk { background: var(--green); border-color: var(--green); color: #fff; }
+  .type-btn.active.keluar { background: var(--red); border-color: var(--red); color: #fff; }
+  .input-group { display: flex; flex-direction: column; gap: 10px; }
+  .input-group input {
+    width: 100%; padding: 12px 14px; border: 1px solid #333; background: #111217;
+    border-radius: 12px; font-family: 'Inter', sans-serif; font-weight: 600; color: #fff; outline: none;
+  }
+  .input-group button {
+    width: 100%; padding: 12px; background: var(--blue); color: #fff;
+    border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: .15s;
+  }
+  .input-group button:hover { background: var(--blue-soft); }
+
+  /* ── SYNC INDICATOR ── */
+  .sync-bar {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: #555; margin-bottom: 14px;
+  }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+
+  @media(max-width: 600px) {
+    #saldoTotal { font-size: 30px; }
+    .menu-grid img { width: 48px; height: 48px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nav-container" id="navContainer">
+  <div class="nav-orb" id="navOrb">
+    <img src="icon.png" alt="Logo">
+  </div>
+  <div class="nav-menu" id="navMenu">
+    <a href="history.html">  Riwayat Duit</a>
+    <a href="billing.html">  Tagihan Utang</a>
+    <a href="utang.html">  Utang</a>
+    <a href="notes.html">  Notes</a>
+    <a href="grafik.html">  Grafik</a>
+    <a href="profile.html">  Profile</a>
+    <a href="#" onclick="logout(); return false;">  Logout</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="header">
+    <div class="welcome-card">
+      <a href="profile.html" class="avatar-link"><img id="headerAvatar" class="mini-avatar empty" src="icon.png" alt="Profile"></a>
+      <div class="welcome-text">
+        <h3 id="greeting">Halo</h3>
+        <div id="datetime">—</div>
+      </div>
+    </div>
+    <div class="action-group">
+      <button onclick="simpanData()">💾 Save</button>
+      <button onclick="document.getElementById('importFile').click()">📥 Import</button>
+      <input type="file" id="importFile" hidden accept=".json">
+    </div>
+  </div>
+
+  <!-- SALDO CARD -->
+  <div class="saldo-card">
+    <img src="icon.png" class="saldo-bg" alt="">
+    <h2>Saldo Bersih</h2>
+    <h1 id="saldoTotal" class="text-stroke">Rp 0</h1>
+    <div class="summary">
+      <p class="history-line">Total Kas Masuk &nbsp;: <span id="totalMasuk" class="text-stroke">Rp 0</span></p>
+      <p class="keluar-line">Total Kas Keluar : <span id="totalKeluar" class="text-stroke">Rp 0</span></p>
+      <p class="piutang-line">Total Utang &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span id="totalUtang" class="text-stroke">Rp 0</span></p>
+      <p class="utang-line">Total Tagihan &nbsp;&nbsp;&nbsp;: <span id="totalBilling" class="text-stroke">Rp 0</span></p>
+    </div>
+  </div>
+
+  <!-- MENU GRID -->
+  <div class="menu-card">
+    <h2 class="menu-title">MENU</h2>
+    <div class="menu-grid">
+      <a href="history.html"><img src="moneyin.png" alt=""><span>Riwayat Duit</span></a>
+      <a href="utang.html"><img src="credit.png" alt=""><span>Utang</span></a>
+      <a href="billing.html"><img src="debt.png" alt=""><span>Tagihan</span></a>
+      <a href="grafik.html"><img src="grafik.png" alt=""><span>Grafik</span></a>
+      <a href="notes.html"><img src="notes.png" alt=""><span>Notes</span></a>
+      <a href="profile.html"><img src="icon.png" alt=""><span>Profile</span></a>
+    </div>
+  </div>
+
+  <!-- NOTES PREVIEW (sync dari notes.html → key: 'notes_data') -->
+  <div class="notes-section">
+    <h2>Catatan Terbaru</h2>
+    <div id="notesContainer"><div class="notes-empty">Belum ada catatan.</div></div>
+  </div>
+
+  <!-- RIWAYAT TRANSAKSI (sync dari history.html → key: 'savedDataRiwayat') -->
+  <div class="riwayat-container">
+    <p class="riwayat-title">Riwayat Transaksi Terkini</p>
+    <div class="sync-bar"><span class="sync-dot"></span>Live sync localStorage</div>
+    <div class="riwayat-list" id="riwayatList">
+      <p style="text-align:center;color:var(--blue-soft);font-weight:700;">Belum ada riwayat.</p>
+    </div>
+  </div>
+
+  <!-- INPUT TRANSAKSI CEPAT -->
+  <div class="bottom-action">
+    <h4>Tambah Transaksi Cepat</h4>
+    <div class="input-group">
+      <div class="type-toggle">
+        <button class="type-btn masuk active" id="typeMasukBtn" onclick="setTxType('masuk')">Uang Masuk</button>
+        <button class="type-btn keluar" id="typeKeluarBtn" onclick="setTxType('keluar')">Uang Keluar</button>
+      </div>
+      <input type="text" id="inputKeterangan" placeholder="Keterangan (cth: Gaji)">
+      <input type="text" id="inputNominal" placeholder="Nominal Rp" onkeyup="formatInputSaja(this)">
+      <button onclick="tambahRiwayat()">Tambahkan ke Riwayat</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// KEY MAPPING (sesuai file masing-masing)
+// history.html  → 'savedDataRiwayat'  → {id, type, amount, note, datetimeStr}
+// notes.html    → 'notes_data'        → {id, title, body, date}
+// utang.html    → 'utang_entries'     → {name, debt, datetimeStr}
+// billing.html  → 'billing_entries'   → {name, amount, datetimeStr}
+// profile.html  → 'profile_data'      → {username, fullName, email, birthDate, photo}
+// login.html    → 'profile_data'      → {username, fullName, email} (subset, key sama dgn profile)
+// ══════════════════════════════════════════════════════
+
+let activeTxType = 'masuk';
+
+// ── HELPERS ──
+function formatAngka(n) {
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+function formatInputSaja(el) {
+  let val = el.value.replace(/[^0-9]/g, '');
+  if (val) el.value = parseInt(val).toLocaleString('id-ID');
+}
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── CLOCK + GREETING (nama ikut profile_data, sesuai login/profile) ──
+function updateDateTime() {
+  const now = new Date();
+  const h = now.getHours();
+  const greetTime = h < 11 ? '⛅ Selamat Pagi' : h < 15 ? '☀️ Selamat Siang' : h < 18 ? '🌤️ Selamat Sore' : '🌙 Selamat Malam';
+
+  const profile = JSON.parse(localStorage.getItem('profile_data') || '{}');
+  const namaTampil = profile.fullName || profile.username || 'Sobat';
+
+  document.getElementById('greeting').textContent = 'Halo, ' + namaTampil;
+  document.getElementById('datetime').textContent = greetTime + ' • ' + now.toLocaleDateString('id-ID', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) + ' • ' + now.toLocaleTimeString('id-ID');
+
+  const avatarEl = document.getElementById('headerAvatar');
+  if (profile.photo) {
+    avatarEl.src = profile.photo;
+    avatarEl.classList.remove('empty');
+  } else {
+    avatarEl.src = 'icon.png';
+    avatarEl.classList.add('empty');
+  }
+}
+setInterval(updateDateTime, 1000);
+
+// ── MASTER RENDER (baca ulang semua localStorage setiap kali dipanggil) ──
+function renderTampilan() {
+
+  // 1. RIWAYAT TRANSAKSI — key: 'savedDataRiwayat' (sesuai history.html)
+  const dataRiwayat = JSON.parse(localStorage.getItem('savedDataRiwayat') || '[]');
+
+  // Hitung masuk & keluar — history.html pakai field 'type' dengan value 'masuk'/'keluar'
+  const totalMasuk  = dataRiwayat.filter(tx => tx.type === 'masuk').reduce((s, tx) => s + (tx.amount || 0), 0);
+  const totalKeluar = dataRiwayat.filter(tx => tx.type === 'keluar').reduce((s, tx) => s + (tx.amount || 0), 0);
+  const sisaSaldo   = totalMasuk - totalKeluar;
+
+  document.getElementById('totalMasuk').textContent  = formatAngka(totalMasuk);
+  document.getElementById('totalKeluar').textContent = formatAngka(totalKeluar);
+  document.getElementById('saldoTotal').textContent  = formatAngka(sisaSaldo);
+
+  // 2. UTANG — key: 'utang_entries' (sesuai utang.html), field: 'debt'
+  const dataUtang   = JSON.parse(localStorage.getItem('utang_entries') || '[]');
+  const totalUtang  = dataUtang.reduce((s, e) => s + (e.debt || 0), 0);
+  document.getElementById('totalUtang').textContent  = formatAngka(totalUtang);
+
+  // 3. BILLING/TAGIHAN — key: 'billing_entries' (akan dipakai billing.html), field: 'amount'
+  const dataBilling   = JSON.parse(localStorage.getItem('billing_entries') || '[]');
+  const totalBilling  = dataBilling.reduce((s, e) => s + (e.amount || 0), 0);
+  document.getElementById('totalBilling').textContent = formatAngka(totalBilling);
+
+  // 4. RENDER LIST TRANSAKSI TERKINI (5 teratas)
+  const listEl = document.getElementById('riwayatList');
+  if (dataRiwayat.length === 0) {
+    listEl.innerHTML = '<p style="text-align:center;color:var(--blue-soft);font-weight:700;">Belum ada riwayat.</p>';
+  } else {
+    const top5 = [...dataRiwayat].sort((a, b) => b.id - a.id).slice(0, 5);
+    listEl.innerHTML = top5.map(tx => {
+      const isMasuk = tx.type === 'masuk';
+      const sign = isMasuk ? '+' : '-';
+      return `
+        <div class="riwayat-item ${isMasuk ? 'masuk-type' : 'keluar-type'}">
+          <div>
+            <div style="font-weight:800;font-size:14px;">${escHtml(tx.note || (isMasuk ? 'Pemasukan' : 'Pengeluaran'))}</div>
+            <div style="font-size:11px;opacity:0.6;margin-top:2px;">${escHtml(tx.datetimeStr || '')}</div>
+          </div>
+          <div class="amt-badge text-stroke" style="font-weight:800;font-size:15px;">${sign} ${formatAngka(tx.amount || 0)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // 5. NOTES PREVIEW — key: 'notes_data' (sesuai notes.html), field: {title, body, date}
+  const dataNotes = JSON.parse(localStorage.getItem('notes_data') || '[]');
+  const notesEl   = document.getElementById('notesContainer');
+  if (dataNotes.length === 0) {
+    notesEl.innerHTML = '<div class="notes-empty">Belum ada catatan.<br><a href="notes.html" style="color:var(--blue-soft);font-size:11px;">+ Buat catatan →</a></div>';
+  } else {
+    notesEl.innerHTML = dataNotes.slice(0, 6).map(n => `
+      <div class="note-preview-card">
+        <strong>${escHtml(n.title || 'Tanpa Judul')}</strong>
+        <div class="note-preview-body">${escHtml(n.body || '')}</div>
+        <span>${escHtml(n.date || '')}</span>
+      </div>`).join('');
+  }
+}
+
+// ── TAMBAH TRANSAKSI CEPAT (langsung ke 'savedDataRiwayat' sesuai format history.html) ──
+function tambahRiwayat() {
+  const nominalRaw = document.getElementById('inputNominal').value.replace(/[^0-9]/g, '');
+  const nominal    = parseFloat(nominalRaw);
+  const ket        = document.getElementById('inputKeterangan').value.trim() || (activeTxType === 'masuk' ? 'Pemasukan' : 'Pengeluaran');
+
+  if (!nominal || nominal <= 0) { alert('Masukkan nominal yang valid coo!'); return; }
+
+  const now = new Date();
+  const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const dtStr = `${days[now.getDay()]}, ${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} — ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+  // Baca existing, tambah entry baru, simpan kembali
+  const dataRiwayat = JSON.parse(localStorage.getItem('savedDataRiwayat') || '[]');
+  dataRiwayat.unshift({
+    id: Date.now() + Math.random(),
+    type: activeTxType,
+    amount: nominal,
+    note: ket,
+    datetimeStr: dtStr
+  });
+  localStorage.setItem('savedDataRiwayat', JSON.stringify(dataRiwayat));
+
+  document.getElementById('inputNominal').value   = '';
+  document.getElementById('inputKeterangan').value = '';
+  renderTampilan();
+}
+
+function setTxType(type) {
+  activeTxType = type;
+  document.getElementById('typeMasukBtn').classList.toggle('active', type === 'masuk');
+  document.getElementById('typeKeluarBtn').classList.toggle('active', type === 'keluar');
+}
+
+// ── LOGOUT (akhiri sesi, balik ke login.html) ──
+function logout() {
+  localStorage.setItem('session_active', 'false');
+  window.location.href = 'login.html';
+}
+
+// ── SAVE (export JSON semua data) ──
+function simpanData() {
+  const allData = {
+    savedDataRiwayat: JSON.parse(localStorage.getItem('savedDataRiwayat') || '[]'),
+    utang_entries:    JSON.parse(localStorage.getItem('utang_entries')    || '[]'),
+    billing_entries:  JSON.parse(localStorage.getItem('billing_entries')  || '[]'),
+    notes_data:       JSON.parse(localStorage.getItem('notes_data')       || '[]'),
+    profile_data:     JSON.parse(localStorage.getItem('profile_data')     || '{}'),
+    exported_at:      new Date().toLocaleString('id-ID')
+  };
+  const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'arc-cashflow-backup.json';
+  a.click();
+  alert('Data berhasil diekspor coo! 💾');
+}
+
+// ── IMPORT ──
+document.getElementById('importFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const parsed = JSON.parse(evt.target.result);
+      // Support format lama & baru
+      if (parsed.savedDataRiwayat || parsed.dataRiwayat) {
+        localStorage.setItem('savedDataRiwayat', JSON.stringify(parsed.savedDataRiwayat || parsed.dataRiwayat || []));
+      }
+      if (parsed.utang_entries || parsed.savedDataUtang) {
+        localStorage.setItem('utang_entries', JSON.stringify(parsed.utang_entries || parsed.savedDataUtang || []));
+      }
+      if (parsed.billing_entries || parsed.savedDataBilling) {
+        localStorage.setItem('billing_entries', JSON.stringify(parsed.billing_entries || parsed.savedDataBilling || []));
+      }
+      if (parsed.notes_data || parsed.savedDataNotes) {
+        localStorage.setItem('notes_data', JSON.stringify(parsed.notes_data || parsed.savedDataNotes || []));
+      }
+      if (parsed.profile_data) {
+        localStorage.setItem('profile_data', JSON.stringify(parsed.profile_data || {}));
+      }
+      alert('Import berhasil coo! 🚀');
+      renderTampilan();
+      updateDateTime();
+    } catch(err) {
+      alert('File tidak valid!');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ── DRAGGABLE NAV ──
+const navContainer = document.getElementById('navContainer');
+const navOrb       = document.getElementById('navOrb');
+const navMenu      = document.getElementById('navMenu');
+let isDragging = false, startX, startY, initialX, initialY, hasMoved = false;
+
+navOrb.addEventListener('pointerdown', e => {
+  isDragging = true; hasMoved = false;
+  startX = e.clientX; startY = e.clientY;
+  const r = navContainer.getBoundingClientRect();
+  initialX = r.left; initialY = r.top;
+  navContainer.style.transform = 'none';
+  navContainer.style.top  = initialY + 'px';
+  navContainer.style.left = initialX + 'px';
+  navOrb.setPointerCapture(e.pointerId);
+});
+navOrb.addEventListener('pointermove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - startX, dy = e.clientY - startY;
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true;
+  const newX = Math.max(0, Math.min(window.innerWidth - 60,  initialX + dx));
+  const newY = Math.max(0, Math.min(window.innerHeight - 60, initialY + dy));
+  navContainer.style.left = newX + 'px';
+  navContainer.style.top  = newY + 'px';
+  if (newX > window.innerWidth / 2) { navMenu.style.left = 'auto'; navMenu.style.right = '70px'; }
+  else { navMenu.style.left = '70px'; navMenu.style.right = 'auto'; }
+});
+navOrb.addEventListener('pointerup', e => {
+  if (!isDragging) return;
+  isDragging = false;
+  navOrb.releasePointerCapture(e.pointerId);
+  if (!hasMoved) {
+    navOrb.classList.add('spin');
+    setTimeout(() => navOrb.classList.remove('spin'), 600);
+    navMenu.classList.toggle('open');
+  }
+});
+document.addEventListener('click', e => { if (!navContainer.contains(e.target)) navMenu.classList.remove('open'); });
+
+// ── INIT ──
+updateDateTime();
+renderTampilan();
+
+// Auto-refresh setiap 3 detik (biar sync kalau pindah tab)
+setInterval(renderTampilan, 3000);
+</script>
+</body>
+</html>

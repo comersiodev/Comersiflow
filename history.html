@@ -1,0 +1,464 @@
+<!DOCTYPE html>  
+<html lang="id">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">  
+<title>Arc - Riwayat</title>  
+<link rel="preconnect" href="https://fonts.googleapis.com">  
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">  
+<style>  
+  /* 
+     THEMING & VARIABLES (ARC CORE DESIGN)
+      */
+  :root {  
+    --bg: #08080a;  
+    --card-light-1: #dadcdf;  
+    --card-light-2: #bcbfc3;  
+    --hist-card-1: #dadcdf;  
+    --hist-card-2: #bcbfc3;  
+    --panel-bg: #0a0a0e;  
+    --blue: #2d63d8;  
+    --blue-soft: #5b8bf7;  
+    --ink: #15161a;  
+    --green: #0e9870;  
+    --red: #d43838;  
+    --muted: #4a4a6a;  
+  }  
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }  
+
+  body {  
+    background: url("bg.png") center/cover no-repeat fixed;
+    background-color: var(--bg);  
+    font-family: 'Inter', sans-serif;  
+    color: #fff;  
+    min-height: 100vh;  
+    display: flex;  
+    justify-content: center;  
+    padding: 15px 15px 140px;
+  }  
+
+  .container {  
+    width: 100%;  
+    max-width: 750px;  
+    position: relative;  
+  }  
+
+  .text-stroke {
+    -webkit-text-stroke: 0.5px #000000;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  /*  HEADER BOX MINIMALIS (TULISAN CASHFLOW ILANG)  */
+  .header {
+    background: var(--panel-bg);
+    border: 2px solid var(--blue);
+    border-radius: 24px;
+    padding: 18px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .month-label { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; }
+  .update-badge { font-size: 11px; opacity: 0.6; }
+
+  /*  CARD TOTAL SALDO + LOGO HALF-FADE EFFECT  */
+  .card-total {
+    position: relative;
+    overflow: hidden; /* Biar logo yang keluar batas kepotong setengah */
+    background: linear-gradient(150deg, var(--card-light-1), var(--card-light-2));
+    border-radius: 32px;
+    padding: 26px;
+    margin-bottom: 18px;
+    box-shadow: 0 14px 35px rgba(0,0,0,0.4);
+    color: var(--ink);
+  }
+  
+  /* Desain logo nyempil kanan, pudar ke kiri */
+  .deco-wrap { 
+    position: absolute; 
+    top: 50%; 
+    right: -40px; /* Geser ke kanan biar kelihatan separuh */
+    transform: translateY(-50%); 
+    width: 130px; 
+    height: 130px; 
+    pointer-events: none; 
+    
+    /* Efek gradasi pudar dari kanan (50%) ke kiri (10%) */
+    mask-image: linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%);
+    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%);
+  }
+  .deco-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  
+  .data-row { margin-bottom: 16px; position: relative; z-index: 2; }
+  .data-row:last-of-type { margin-bottom: 0; }
+  .label-masuk { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 4px; text-transform: uppercase; }
+  .label-masuk.in { color: var(--green); }
+  .label-masuk.out { color: var(--red); }
+  
+  .total-amount { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 28px; }
+  .total-amount.in { color: var(--green); }
+  .total-amount.out { color: var(--red); }
+  
+  .ratio-box {
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.15);
+    font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; opacity: 0.8;
+    position: relative; z-index: 2;
+  }
+
+  /*  PANEL LIST RIWAYAT  */
+  .section { margin-bottom: 18px; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 12px; color: var(--blue-soft); text-align: center; }
+  .panel-riwayat { background: var(--panel-bg); border: 2px solid var(--blue); border-radius: 28px; padding: 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  
+  .history-list { display: flex; flex-direction: column; gap: 12px; }
+  .hist-card {
+    background: linear-gradient(150deg, var(--hist-card-1), var(--hist-card-2));
+    border-radius: 18px; padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 8px; color: var(--ink);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: slideIn .35s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hist-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .hist-type { font-family: 'Playfair Display', serif; font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .hist-date { font-size: 11px; font-weight: 700; opacity: 0.6; white-space: nowrap; }
+  .hist-note { font-size: 12px; font-weight: 600; color: #2d313f; line-height: 1.4; }
+  .hist-amount { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 20px; text-align: right; }
+  .hist-amount.masuk { color: var(--green); }
+  .hist-amount.keluar { color: var(--red); }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--blue-soft); font-weight: 700; font-size: 13px; }
+  .empty-state strong { display: block; font-family: 'Playfair Display', serif; font-size: 16px; color: #fff; margin-bottom: 6px; }
+
+  /*  SYSTEM BOTTOM SHEET ENGINE  */
+  .bottom-sheet { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; z-index: 1000; }
+  .sheet-inner {
+    width: 100%; max-width: 550px; background: var(--panel-bg); border: 2px solid var(--blue);
+    border-radius: 28px 28px 0 0; overflow: hidden; box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
+  }
+  .sheet-toggle {
+    width: 100%; border: none; background: linear-gradient(150deg, var(--card-light-1), var(--card-light-2));
+    font-family: 'Playfair Display', serif; font-weight: 800; font-size: 15px; letter-spacing: 0.5px;
+    padding: 16px; cursor: pointer; color: var(--ink); text-align: center; text-transform: uppercase;
+  }
+  .sheet-form { max-height: 0; overflow: hidden; transition: max-height .35s cubic-bezier(0.4, 0, 0.2, 1); background: var(--panel-bg); }
+  .sheet-form.open { max-height: 420px; }
+  .sheet-form-inner { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  
+  .type-toggle { display: flex; gap: 10px; }
+  .type-btn {
+    flex: 1; padding: 12px; border-radius: 14px; border: 1px solid #222;
+    background: #111217; color: #aaa; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s;
+  }
+  .type-btn.active.masuk { background: var(--green); border-color: var(--green); color: #fff; }
+  .type-btn.active.keluar { background: var(--red); border-color: var(--red); color: #fff; }
+  
+  .field {
+    width: 100%; padding: 14px; border-radius: 14px; border: 1px solid #222;
+    background: #111217; color: #fff; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; outline: none;
+  }
+  .field::placeholder { color: #555; }
+  .field:focus { border-color: var(--blue); }
+  
+  .submit-btn {
+    margin-top: 4px; padding: 14px; border: none; border-radius: 14px;
+    background: var(--blue); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;
+  }
+  .submit-btn:hover { background: var(--blue-soft); }
+
+  /*  FLOATING NAV ORB SYSTEM WITH STAGGER ANIMATION  */
+  .nav-container { position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; align-items: center; touch-action: none; }
+  
+  .nav-orb { 
+    width: 56px; height: 56px; cursor: grab; background: rgba(16, 18, 24, 0.9); 
+    border: 2px solid var(--blue); border-radius: 50%; display: flex; align-items: center; 
+    justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.2s ease; 
+  }
+  .nav-orb:active { cursor: grabbing; transform: scale(0.95); }
+  .nav-orb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .nav-orb.spin { transform: rotate(360deg); transition: transform 0.6s cubic-bezier(.4,0,.2,1); }
+
+  .nav-menu { position: absolute; left: 70px; display: flex; flex-direction: column; gap: 9px; pointer-events: none; }
+  
+  .nav-menu a, .nav-menu button { 
+    background: #101218; border: 1px solid var(--blue); color: #eef2ff; font-weight: 600; font-size: 13px; 
+    text-decoration: none; padding: 10px 18px; border-radius: 999px; white-space: nowrap; 
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px;
+    opacity: 0; transform: translateX(-20px); width: 100%; font-family: 'Inter', sans-serif; cursor: pointer;
+    transition: opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+  }
+  .nav-menu a:hover, .nav-menu button:hover { background: #1a1d27; color: var(--blue-soft); }
+  .nav-menu button.btn-save { background: rgba(14,152,112,0.15); border-color: var(--green); color: #2ebd70; }
+  .nav-menu button.btn-save:hover { background: rgba(14,152,112,0.25); }
+
+  .nav-menu.open { pointer-events: auto; }
+  .nav-menu.open a, .nav-menu.open button { opacity: 1; transform: translateX(0); }
+
+  .nav-menu.open *:nth-child(1) { transition-delay: 0.05s; }
+  .nav-menu.open *:nth-child(2) { transition-delay: 0.12s; }
+  .nav-menu.open *:nth-child(3) { transition-delay: 0.19s; }
+  .nav-menu.open *:nth-child(4) { transition-delay: 0.26s; }
+  .nav-menu.open *:nth-child(5) { transition-delay: 0.33s; }
+  .nav-menu:not(.open) * { transition-delay: 0s !important; }
+</style>
+</head>  
+<body>  
+
+<!-- FLOATING NAVBAR ENGINE -->
+<div class="nav-container" id="navContainer">
+  <div class="nav-orb" id="navOrb"><img src="icon.png" alt="Logo"></div>
+  <div class="nav-menu" id="navMenu">
+    <a href="index.html">  Dashboard</a>
+    <a href="billing.html">  Tagihan Utang</a>
+    <a href="utang.html">  Utang</a>
+    <a href="notes.html">  Notes</a>
+    <a href="grafik.html">  Grafik</a>
+    <button data-action="simpan" class="btn-save">  Simpan Data Keuangan</button>  
+  </div>
+</div>
+
+<div class="container">    
+  
+  <!-- HEADER BOX MINIMALIS (TEXT CASHFLOW HILANG) -->
+  <div class="header">
+    <div class="month-label">Riwayat Dompet</div>
+    <span class="update-badge" id="liveClock">—</span>
+  </div>
+
+  <!-- SUMMARY TOTAL CARD (LOGO HALF-FADE NYEMPIL) -->
+  <div class="card-total">  
+    <div class="deco-wrap"><img src="icon.png" alt="Icon"></div>  
+    
+    <div class="data-row">
+      <p class="label-masuk in">Uang Masuk :</p>  
+      <h1 class="total-amount in text-stroke" id="totalMasuk">Rp 0</h1>  
+    </div>
+    
+    <div class="data-row">
+      <p class="label-masuk out">Uang Keluar :</p>  
+      <h1 class="total-amount out text-stroke" id="totalKeluar">Rp 0</h1>  
+    </div>
+
+    <div class="ratio-box">
+      <span>Rasio (Masuk : Keluar)</span>
+      <span id="ratioValue">0% : 0%</span>
+    </div>
+  </div>    
+  
+  <!-- LIST TRANSAKSI PANEL -->
+  <div class="section">
+    <div class="section-title">Log Mutasi Dana</div>
+    <div class="panel-riwayat" id="panelRiwayat">  
+      <div class="history-list" id="historyList">  
+        <div class="empty-state">  
+          <strong>Riwayat masih kosong coo</strong>  
+          Tambahkan transaksi pertamamu lewat tombol di bagian bawah layar.  
+        </div>  
+      </div>  
+    </div>  
+  </div>  
+
+</div>  
+
+<!-- SYSTEM BOTTOM SHEET ENGINE -->
+<div class="bottom-sheet">  
+  <div class="sheet-inner">  
+    <button class="sheet-toggle" id="sheetToggle">+ Tambah Log Transaksi</button>  
+    <div class="sheet-form" id="sheetForm">  
+      <div class="sheet-form-inner">  
+        <div class="type-toggle">  
+          <button class="type-btn masuk active" id="typeMasukBtn" type="button">Uang Masuk</button>  
+          <button class="type-btn keluar" id="typeKeluarBtn" type="button">Uang Keluar</button>  
+        </div>  
+        <input class="field" id="amountInput" type="number" placeholder="Jumlah (Rp)" min="0">  
+        <input class="field" id="noteInput" type="text" placeholder="Catatan log transaksi (opsional)">  
+        <button class="submit-btn" id="submitBtn">Tambahkan ke Riwayat</button>  
+      </div>  
+    </div>  
+  </div>  
+</div>  
+
+<script>  
+  // ---------- STATE ENGINE ----------  
+  let transactions = JSON.parse(localStorage.getItem('savedDataRiwayat')) || []; 
+  let selectedType = 'masuk';  
+  
+  // ---------- HELPERS ----------  
+  function formatRupiah(n){  
+    return 'Rp ' + Math.round(n).toLocaleString('id-ID');  
+  }  
+  
+  function formatDateTime(dateObj) {
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const dayName = days[dateObj.getDay()];
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const y = dateObj.getFullYear();
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+    const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+    
+    return `${dayName}, ${d}/${m}/${y} — ${hours}:${minutes}:${seconds}`;
+  }
+  
+  setInterval(() => {
+    document.getElementById('liveClock').textContent = 'UPD — ' + formatDateTime(new Date());
+  }, 1000);
+  
+  // ---------- RENDER CONTROLLER ----------  
+  function render(){  
+    const listEl = document.getElementById('historyList');  
+    listEl.innerHTML = '';  
+  
+    if(transactions.length === 0){  
+      listEl.innerHTML = `  
+        <div class="empty-state">  
+          <strong>Riwayat masih kosong coo</strong>  
+          Tambahkan transaksi pertamamu lewat tombol di bagian bawah layar.  
+        </div>`;  
+    } else {  
+      const sorted = [...transactions].sort((a,b)=> b.id - a.id);  
+      sorted.forEach(tx=>{  
+        const card = document.createElement('div');  
+        card.className = 'hist-card';  
+        const typeLabel = tx.type === 'masuk' ? 'Pemasukan' : 'Pengeluaran';  
+        const sign = tx.type === 'masuk' ? '+' : '-';  
+        card.innerHTML = `  
+          <div class="hist-row-top">  
+            <span class="hist-type">${typeLabel}</span>  
+            <span class="hist-date">${tx.datetimeStr}</span>  
+          </div>  
+          ${tx.note ? `<div class="hist-note">${tx.note}</div>` : ''}  
+          <div class="hist-amount ${tx.type}">${sign} ${formatRupiah(tx.amount)}</div>  
+        `;  
+        listEl.appendChild(card);  
+      });  
+    }  
+  
+    const totalMasuk = transactions.filter(tx => tx.type === 'masuk').reduce((sum, tx) => sum + tx.amount, 0);
+    const totalKeluar = transactions.filter(tx => tx.type === 'keluar').reduce((sum, tx) => sum + tx.amount, 0);
+    
+    document.getElementById('totalMasuk').textContent = formatRupiah(totalMasuk);  
+    document.getElementById('totalKeluar').textContent = formatRupiah(totalKeluar);  
+    
+    const grandTotal = totalMasuk + totalKeluar;
+    if(grandTotal > 0) {
+      const masukPersen = Math.round((totalMasuk / grandTotal) * 100);
+      const keluarPersen = 100 - masukPersen;
+      document.getElementById('ratioValue').textContent = `${masukPersen}% : ${keluarPersen}%`;
+    } else {
+      document.getElementById('ratioValue').textContent = '0% : 0%';
+    }
+  }  
+  
+  function addTransaction(type, amount, note){  
+    const now = new Date();
+    transactions.push({  
+      id: Date.now() + Math.random(),  
+      type, 
+      amount, 
+      nominal: amount,
+      note, 
+      tipe: type === 'masuk' ? 'masuk' : 'keluar',
+      tanggal: formatDateTime(now),
+      datetimeStr: formatDateTime(now)
+    });  
+    localStorage.setItem('savedDataRiwayat', JSON.stringify(transactions));
+    render();  
+  }  
+  
+  // ---------- BOTTOM SHEET INTERACTION ----------  
+  const sheetForm = document.getElementById('sheetForm');  
+  const sheetToggle = document.getElementById('sheetToggle');  
+  function openSheet(){ sheetForm.classList.add('open'); }  
+  function closeSheet(){ sheetForm.classList.remove('open'); }  
+  
+  sheetToggle.addEventListener('click', ()=>{  
+    sheetForm.classList.contains('open') ? closeSheet() : openSheet();  
+  });  
+  
+  const typeMasukBtn = document.getElementById('typeMasukBtn');  
+  const typeKeluarBtn = document.getElementById('typeKeluarBtn');  
+  function setType(type){  
+    selectedType = type;  
+    typeMasukBtn.classList.toggle('active', type === 'masuk');  
+    typeKeluarBtn.classList.toggle('active', type === 'keluar');  
+  }  
+  typeMasukBtn.addEventListener('click', ()=> setType('masuk'));  
+  typeKeluarBtn.addEventListener('click', ()=> setType('keluar'));  
+  
+  document.getElementById('submitBtn').addEventListener('click', ()=>{  
+    const amount = parseFloat(document.getElementById('amountInput').value);  
+    const note = document.getElementById('noteInput').value.trim();  
+  
+    if(!amount || amount <= 0){  
+      document.getElementById('amountInput').focus();  
+      return;  
+    }  
+  
+    addTransaction(selectedType, amount, note);  
+  
+    document.getElementById('amountInput').value = '';  
+    document.getElementById('noteInput').value = '';  
+    closeSheet();  
+  });  
+
+  document.getElementById('navMenu').addEventListener('click', (e)=>{  
+    const action = e.target.dataset.action;  
+    if(action === 'simpan'){
+      localStorage.setItem('savedDataRiwayat', JSON.stringify(transactions));
+      alert('Semua data mutasi berhasil disimpan aman di sistem coo! ');
+      document.getElementById('navMenu').classList.remove('open');
+    }
+  });
+
+  // 
+  // DRAGGABLE & SPIN STAGGER NAV LOGIC
+  // 
+  const container = document.getElementById('navContainer');
+  const orb = document.getElementById('navOrb');
+  const menu = document.getElementById('navMenu');
+  let isDragging = false, startX, startY, initialX, initialY, hasMoved = false;
+
+  orb.addEventListener('pointerdown', (e) => {
+      isDragging = true; hasMoved = false;
+      startX = e.clientX; startY = e.clientY;
+      const rect = container.getBoundingClientRect();
+      initialX = rect.left; initialY = rect.top;
+      container.style.transform = 'none';
+      container.style.top = initialY + 'px'; container.style.left = initialX + 'px';
+      orb.setPointerCapture(e.pointerId);
+  });
+
+  orb.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX; const dy = e.clientY - startY;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true;
+      let newX = Math.max(0, Math.min(window.innerWidth - 60, initialX + dx));
+      let newY = Math.max(0, Math.min(window.innerHeight - 60, initialY + dy));
+      container.style.left = newX + 'px'; container.style.top = newY + 'px';
+      if (newX > window.innerWidth / 2) { menu.style.left = 'auto'; menu.style.right = '70px'; } 
+      else { menu.style.left = '70px'; menu.style.right = 'auto'; }
+  });
+
+  orb.addEventListener('pointerup', (e) => {
+      if (!isDragging) return; isDragging = false; orb.releasePointerCapture(e.pointerId);
+      if (!hasMoved) {
+          orb.classList.add('spin');
+          setTimeout(() => orb.classList.remove('spin'), 600);
+          menu.classList.toggle('open');
+      }
+  });
+
+  document.addEventListener('click', (e) => { if(!container.contains(e.target)) menu.classList.remove('open'); });
+  
+  render();  
+</script>  
+</body>  
+</html>

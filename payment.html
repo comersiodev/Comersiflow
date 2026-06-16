@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Detail Pembayaran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ══════════════════════════
+     THEMING & VARIABLES
+     ══════════════════════════ */
+  :root {
+    --bg: #08080a;
+    --card-light-1: #dadcdf;
+    --card-light-2: #bcbfc3;
+    --panel-bg: #0a0a0e;
+    --blue: #2d63d8;
+    --blue-soft: #5b8bf7;
+    --green: #0e9870;
+    --green-soft: #14b886;
+    --red: #d43838;
+    --ink: #15161a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: url('bg.png') no-repeat center center fixed;
+    background-size: cover;
+    background-color: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 30px 15px 100px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 450px;
+    position: relative;
+  }
+  
+  .page-title {
+    text-align: center; font-family: 'Playfair Display', serif;
+    font-weight: 800; letter-spacing: 1px; font-size: 24px; margin-bottom: 22px; color: var(--blue-soft);
+  }
+
+  /* Efek Stroke Biar Kagak Samar */
+  .text-stroke {
+    -webkit-text-stroke: 0.4px #000000;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ══════════════════════════
+     PAYMENT CARD COMPONENTS
+     ══════════════════════════ */
+  .payment-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(150deg, var(--card-light-1), var(--card-light-2));
+    border-radius: 32px; 
+    padding: 30px 24px;
+    box-shadow: 0 14px 35px rgba(0,0,0,0.45);
+    color: var(--ink);
+    margin-bottom: 18px;
+  }
+
+  .saldo-bg {
+    position: absolute;
+    right: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 1;
+    mask-image: linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%);
+    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 100%);
+  }
+
+  .card-content-wrap {
+    position: relative;
+    z-index: 2;
+  }
+
+  .label-small {
+    text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    color: rgba(0,0,0,0.6); margin: 0;
+  }
+  
+  .debtor-name {
+    font-family: 'Playfair Display', serif; font-weight: 900; text-align: center;
+    font-size: 28px; margin: 6px 0 2px; color: var(--ink);
+  }
+  
+  .debt-note {
+    text-align: center; font-size: 12px; color: #333; margin: 0 0 4px; font-weight: 600;
+  }
+
+  /* Realtime Time Badge Inside Card */
+  .time-badge {
+    text-align: center; font-size: 11px; font-weight: 700; color: #222;
+    background: rgba(255,255,255,0.4); border-radius: 999px;
+    padding: 4px 12px; width: max-content; margin: 8px auto 0;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  
+  .divider { height: 1px; background: rgba(0,0,0,0.15); margin: 18px 0; }
+  
+  .debt-amount {
+    font-family: 'Playfair Display', serif; font-weight: 900; text-align: center;
+    font-size: 34px; color: var(--red); margin: 6px 0 0;
+  }
+
+  /* ══════════════════════════
+     METHOD SECTION
+     ══════════════════════════ */
+  .method-row {
+    display: flex; align-items: center; gap: 14px;
+    background: rgba(255,255,255,0.45); border-radius: 20px; padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .method-logo {
+    width: 48px; height: 48px; border-radius: 12px; object-fit: contain;
+    background: #fff; padding: 5px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .method-avatar {
+    width: 48px; height: 48px; border-radius: 12px; background: var(--blue); color: #fff;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    font-family: 'Playfair Display', serif; font-weight: 700; font-size: 18px;
+  }
+  .method-info { flex: 1; min-width: 0; }
+  .method-name { font-weight: 700; font-size: 14px; color: var(--ink); }
+  .method-number { font-size: 13px; color: #111; font-weight: 700; word-break: break-all; margin-top: 2px; }
+  
+  .copy-btn {
+    background: var(--blue); color: #fff; border: none; border-radius: 999px;
+    padding: 9px 16px; font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+    transition: .1s;
+  }
+  .copy-btn:active { transform: scale(0.93); }
+
+  .qris-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .qris-name { font-weight: 700; font-size: 14px; color: var(--ink); }
+  .qris-img {
+    width: 190px; height: 190px; object-fit: contain; background: #fff;
+    border-radius: 16px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .download-qris-btn {
+    background: var(--green); color: #fff; border: none; border-radius: 999px;
+    padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; transition: .15s;
+  }
+  .download-qris-btn:active { transform: scale(0.95); }
+
+  /* ══════════════════════════
+     ACTION BUTTON
+     ══════════════════════════ */
+  .download-all-btn {
+    width: 100%; padding: 14px; border: none; border-radius: 16px;
+    background: var(--blue); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(45, 99, 216, 0.3); transition: .15s;
+  }
+  .download-all-btn:active { transform: scale(0.97); }
+
+  .empty-box {
+    background: var(--panel-bg); border: 2px solid var(--blue); border-radius: 28px;
+    text-align: center; color: #9aa3c2; padding: 45px 20px; font-size: 13px; line-height: 1.6;
+  }
+  .empty-box strong {
+    display: block; color: var(--blue-soft); font-family: 'Playfair Display', serif;
+    font-size: 19px; margin-bottom: 8px; font-weight: 800;
+  }
+  .empty-box button {
+    margin-top: 18px; width: 100%; background: var(--blue); color: #fff; border: none;
+    border-radius: 12px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 13px;
+  }
+
+  .toast {
+    position: fixed; bottom: 35px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #101218; color: #fff; padding: 10px 24px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; border: 2px solid var(--blue); opacity: 0; pointer-events: none;
+    transition: .25s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 3000;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ══════════════════════════
+     FLOATING NAV ORB (DASHBOARD COMPATIBLE)
+     ══════════════════════════ */
+  .nav-container {
+    position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
+    z-index: 2000; display: flex; align-items: center; touch-action: none;
+  }
+  .nav-orb {
+    width: 56px; height: 56px; cursor: grab; background: rgba(16, 18, 24, 0.9);
+    border: 2px solid var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.2s ease;
+  }
+  .nav-orb:active { cursor: grabbing; transform: scale(0.95); }
+  .nav-orb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .nav-orb.spin { transform: rotate(360deg); transition: transform 0.6s cubic-bezier(.4,0,.2,1); }
+
+  .nav-menu { position: absolute; left: 70px; display: flex; flex-direction: column; gap: 9px; pointer-events: none; }
+  .nav-menu a {
+    background: #101218; border: 1px solid var(--blue); color: #eef2ff;
+    font-weight: 600; font-size: 13px; text-decoration: none;
+    padding: 10px 18px; border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px;
+    opacity: 0; transform: translateX(-20px);
+    transition: opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .nav-menu a:hover { background: #1a1d27; color: var(--blue-soft); }
+  .nav-menu.open { pointer-events: auto; }
+  .nav-menu.open a { opacity: 1; transform: translateX(0); }
+  
+  .nav-menu.open a:nth-child(1) { transition-delay: 0.05s; }
+  .nav-menu.open a:nth-child(2) { transition-delay: 0.12s; }
+  .nav-menu.open a:nth-child(3) { transition-delay: 0.19s; }
+  .nav-menu.open a:nth-child(4) { transition-delay: 0.26s; }
+  .nav-menu:not(.open) a { transition-delay: 0s !important; }
+</style>
+</head>
+<body>
+
+<div class="nav-container" id="navContainer">
+  <div class="nav-orb" id="navOrb">
+    <img src="icon.png" alt="Logo">
+  </div>
+  <div class="nav-menu" id="navMenu">
+    <a href="index.html">❖ Dashboard</a>
+    <a href="history.html">❖ Riwayat Duit</a>
+    <a href="billing.html">❖ Tagihan Utang</a>
+    <a href="utang.html">❖ Utang</a>
+  </div>
+</div>
+
+<div class="container">
+  <h2 class="page-title">Detail Pembayaran</h2>
+
+  <div id="content">
+    <div id="paymentCard" class="payment-card">
+        <img src="icon.png" class="saldo-bg" alt="Arc Logo">
+        
+        <div class="card-content-wrap">
+            <p class="label-small text-stroke">PEMBAYARAN UNTUK</p>
+            <h1 class="debtor-name text-stroke" id="debtorName">—</h1>
+            <p class="debt-note" id="debtNote"></p>
+            
+            <div class="time-badge text-stroke" id="billingTime">—</div>
+
+            <div class="divider"></div>
+
+            <p class="label-small text-stroke">TOTAL UTANG</p>
+            <h2 class="debt-amount text-stroke" id="debtAmount">Rp 0</h2>
+
+            <div class="divider"></div>
+
+            <div id="methodSection"></div>
+        </div>
+    </div>
+
+    <button class="download-all-btn" id="downloadAllBtn">📥 Download Tampilan Ini</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Disalin!</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+  const logoMap = {
+    bri: 'Bank BRI.png', bankbri: 'Bank BRI.png', krom: 'Krom.png',
+    jago: 'Bank Jago.png', bankjago: 'Bank Jago.png', seabank: 'SeaBank.png',
+    dana: 'DANA.png', gopay: 'GoPay.png', shopeepay: 'ShopeePay.png'
+  };
+
+  function normKey(s){ return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function findLogo(name){
+    const key = normKey(name);
+    if (logoMap[key]) return logoMap[key];
+    for (const k in logoMap) { if (key.includes(k)) return logoMap[k]; }
+    return null;
+  }
+  function escHtml(s){
+    return (s || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function formatRupiah(n){ return 'Rp ' + Math.round(n || 0).toLocaleString('id-ID'); }
+
+  // Fungsi Jam Realtime Hari & Tanggal Lengkap Indo
+  function updateBillingClock(){
+    const timeEl = document.getElementById('billingTime');
+    if(!timeEl) return;
+    const now = new Date();
+    timeEl.innerText = now.toLocaleString("id-ID", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric",
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+    }) + " WIB";
+  }
+  setInterval(updateBillingClock, 1000);
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1600);
+  }
+  function copyText(text){
+    navigator.clipboard.writeText(text || '')
+      .then(() => showToast('Disalin!'))
+      .catch(() => showToast('Gagal menyalin coo'));
+  }
+
+  function renderMethod(method){
+    const wrap = document.getElementById('methodSection');
+    if (!method){
+      wrap.innerHTML = `<p style="text-align:center;color:#52555d;font-size:13px;">Metode pembayaran tidak tersedia</p>`;
+      return;
+    }
+
+    if (method.type === 'QRIS'){
+      wrap.innerHTML = `
+        <div class="qris-wrap">
+          <p class="qris-name text-stroke">${escHtml(method.name)}</p>
+          <img src="${method.qrisDataUrl}" class="qris-img" alt="QRIS">
+          <button class="download-qris-btn" id="downloadQrisBtn">⬇ Download QRIS</button>
+        </div>`;
+      document.getElementById('downloadQrisBtn').addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.href = method.qrisDataUrl;
+        a.download = 'qris-' + (method.name || 'payment').replace(/\s+/g,'_') + '.png';
+        a.click();
+      });
+    } else {
+      const logo = findLogo(method.name);
+      const initial = escHtml((method.name || '?')[0].toUpperCase());
+      const logoHtml = logo
+        ? `<img src="${logo}" class="method-logo" alt="${escHtml(method.name)}" onerror="this.outerHTML='<div class=&quot;method-avatar&quot;>${initial}</div>'">`
+        : `<div class="method-avatar">${initial}</div>`;
+
+      wrap.innerHTML = `
+        <div class="method-row">
+          ${logoHtml}
+          <div class="method-info">
+            <div class="method-name text-stroke">${escHtml(method.name)} <span style="color:#333;font-weight:700; font-size:11px;">(${escHtml(method.type)})</span></div>
+            <div class="method-number text-stroke">${escHtml(method.number || '-')}</div>
+          </div>
+          <button class="copy-btn" id="copyNumberBtn">Salin</button>
+        </div>`;
+      document.getElementById('copyNumberBtn').addEventListener('click', () => copyText(method.number || ''));
+    }
+  }
+
+  function init(){
+    updateBillingClock();
+    const name = sessionStorage.getItem('current_pay_name');
+    const amount = sessionStorage.getItem('current_pay_amount');
+    const methodType = sessionStorage.getItem('current_pay_method_type');
+    const methodName = sessionStorage.getItem('current_pay_method_name');
+    const number = sessionStorage.getItem('current_pay_number');
+    const qrisImg = sessionStorage.getItem('current_pay_qris_img');
+
+    if (!name || !methodType){
+      document.getElementById('content').innerHTML = `
+        <div class="empty-box">
+          <strong>Belum Ada Pembayaran Terpilih coo!</strong>
+          Silakan tentukan dulu utang yang mau dibayar lewat halaman Utang, lalu konfirmasi metode pembayarannya.
+          <button onclick="window.location.href='utang.html'">Ke Halaman Utang</button>
+        </div>`;
+      return;
+    }
+
+    document.getElementById('debtorName').textContent = name;
+    document.getElementById('debtNote').textContent = '';
+    document.getElementById('debtAmount').textContent = formatRupiah(parseFloat(amount));
+
+    const method = {
+      type: methodType,
+      name: methodName,
+      number: number,
+      qrisDataUrl: qrisImg
+    };
+    renderMethod(method);
+
+    document.getElementById('downloadAllBtn').addEventListener('click', () => {
+      const card = document.getElementById('paymentCard');
+      const btns = card.querySelectorAll('button');
+      btns.forEach(b => b.style.visibility = 'hidden');
+      
+      html2canvas(card, { scale: 2, backgroundColor: null, useCORS: true }).then(canvas => {
+        btns.forEach(b => b.style.visibility = 'visible');
+        const link = document.createElement('a');
+        link.download = 'pembayaran-' + name.replace(/\s+/g,'_') + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    });
+  }
+
+  /* ══════════════════════════
+     DRAGGABLE ORB NAVIGATION ENGINE
+     ══════════════════════════ */
+  const container = document.getElementById('navContainer');
+  const orb = document.getElementById('navOrb');
+  const menu = document.getElementById('navMenu');
+  let isDragging = false, startX, startY, initialX, initialY, hasMoved = false;
+
+  orb.addEventListener('pointerdown', (e) => {
+    isDragging = true; hasMoved = false;
+    startX = e.clientX; startY = e.clientY;
+    const rect = container.getBoundingClientRect();
+    initialX = rect.left; initialY = rect.top;
+    container.style.transform = 'none';
+    container.style.top = initialY + 'px'; container.style.left = initialX + 'px';
+    orb.setPointerCapture(e.pointerId);
+  });
+
+  orb.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX; const dy = e.clientY - startY;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true;
+    
+    let newX = Math.max(0, Math.min(window.innerWidth - 60, initialX + dx));
+    let newY = Math.max(0, Math.min(window.innerHeight - 60, initialY + dy));
+    container.style.left = newX + 'px'; container.style.top = newY + 'px';
+
+    if (newX > window.innerWidth / 2) {
+        menu.style.left = 'auto'; menu.style.right = '70px';
+    } else {
+        menu.style.left = '70px'; menu.style.right = 'auto';
+    }
+  });
+
+  orb.addEventListener('pointerup', (e) => {
+    if (!isDragging) return;
+    isDragging = false; orb.releasePointerCapture(e.pointerId);
+    if (!hasMoved) {
+        orb.classList.add('spin');
+        setTimeout(() => orb.classList.remove('spin'), 600);
+        menu.classList.toggle('open');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if(!container.contains(e.target)) menu.classList.remove('open');
+  });
+
+  init();
+</script>
+</body>
+</html>
